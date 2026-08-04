@@ -62,6 +62,19 @@ cp .env.example .env
 ./scripts/smoke.sh https://<CloudFront 도메인>
 ```
 
+### 라이브 배포 기록
+
+2026-08-04, `ap-northeast-2` 리전에 `./scripts/deploy.sh`로 `YoutubeTrendsStack`을 실제로 배포해 검증했다.
+
+- **배포**: 리소스 20개, 배포 소요 338초.
+- **SiteUrl**: https://d2y73ug3aaah05.cloudfront.net
+- **스모크**: `./scripts/smoke.sh`의 6개 검사(healthz, SPA 인덱스, trending, categories, bad scope 400, 404 대조군) 모두 PASS(6/6).
+- **첫 스냅샷**: 시간별 수집이 cron 경계와 정렬되어 14:00 UTC 정각에 수집됐다. 전체(all) 30건 + 분야별 10건씩 저장을 확인했다.
+- **LLM**: Bedrock `global.anthropic.claude-sonnet-4-6`(글로벌 inference ID, Bearer 인증)으로 첫 호출이 성공해 브리핑·추이 리포트를 생성했다. 같은 시간대에 재호출하면 `cached=true`로 응답해 시간당 1회 토큰 상한이 의도대로 동작함을 확인했다. `daily` 모드는 24시간 비교 데이터가 아직 쌓이지 않은 시점이라 409(정상 — 기준선 없음)를 반환했다.
+- **보안 실측**: ALB DNS 이름으로 직접 접근을 시도하면 연결 자체가 되지 않는다(prefix list SG가 CloudFront origin-facing 대역 밖의 접근을 막는다). 미등록 `/api/*` 경로는 404를 반환한다(SPA 폴백이 아니다 — 위 "API 문서" 절 참고).
+
+주의: `AlbDns`·`TableName` 등 계정에 종속된 스택 출력값은 계정이나 재배포 시점이 다르면 값이 달라진다 — 위 기록은 이 1회 배포 기준이다.
+
 ## VPC 모드
 
 `.env`의 `VPC_MODE`로 전환한다.
