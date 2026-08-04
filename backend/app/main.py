@@ -98,5 +98,3 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
 def dev_app():
     """로컬 개발용: uvicorn app.main:dev_app --factory --port 8000"""
     return create_app(Settings.from_env())
-
-    return app
