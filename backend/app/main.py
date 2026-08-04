@@ -92,6 +92,22 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
     app.include_router(trends_api.router)
     app.include_router(brief_api.router)
 
+    import os
+    static_dir = os.environ.get("STATIC_DIR", "/srv/static")
+    if os.path.isdir(static_dir):
+        from fastapi.staticfiles import StaticFiles
+        from starlette.responses import FileResponse
+
+        app.mount("/assets", StaticFiles(directory=f"{static_dir}/assets"), name="assets")
+
+        @app.get("/{path:path}")
+        def spa(path: str):
+            # /api·/healthz는 위에서 먼저 매칭된다. 나머지는 SPA 폴백.
+            full = os.path.join(static_dir, path)
+            if path and os.path.isfile(full):
+                return FileResponse(full)
+            return FileResponse(os.path.join(static_dir, "index.html"))
+
     return app
 
 
