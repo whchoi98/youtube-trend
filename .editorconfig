@@ -1,0 +1,25 @@
+# EditorConfig — https://editorconfig.org
+# Python 4칸 / TS·JS·JSON 2칸 / LF / UTF-8
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_style = space
+indent_size = 4
+
+[*.md]
+# 마크다운은 줄끝 공백 2개가 줄바꿈 의미를 가지므로 보존한다
+trim_trailing_whitespace = false

@@ -1,0 +1,106 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(cd backend && .venv/bin/pytest:*)",
+      "Bash(backend/.venv/bin/pytest:*)",
+      "Bash(cd frontend && npx tsc:*)",
+      "Bash(cd frontend && npm run build:*)",
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(npm run build:*)",
+      "Bash(cd infra && npx aws-cdk@2 synth:*)",
+      "Bash(cd infra && npx aws-cdk@2 diff:*)",
+      "Bash(npx aws-cdk@2 synth:*)",
+      "Bash(npx aws-cdk@2 diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git ls-files:*)",
+      "Bash(aws sts get-caller-identity:*)",
+      "Bash(aws cloudformation describe-stacks:*)",
+      "Bash(aws cloudformation describe-stack-events:*)",
+      "Bash(aws cloudformation list-stacks:*)",
+      "Bash(aws ecs describe-services:*)",
+      "Bash(aws ecs describe-tasks:*)",
+      "Bash(aws ecs list-tasks:*)",
+      "Bash(aws logs describe-log-groups:*)",
+      "Bash(aws logs tail:*)",
+      "Bash(aws logs filter-log-events:*)",
+      "Bash(aws dynamodb describe-table:*)",
+      "Bash(aws elbv2 describe-load-balancers:*)",
+      "Bash(aws elbv2 describe-target-health:*)",
+      "Bash(aws cloudfront list-distributions:*)",
+      "Bash(aws cloudfront get-distribution:*)",
+      "Bash(aws secretsmanager describe-secret:*)"
+    ],
+    "deny": [
+      "Bash(cdk destroy:*)",
+      "Bash(npx cdk destroy:*)",
+      "Bash(npx aws-cdk@2 destroy:*)",
+      "Bash(cd infra && npx aws-cdk@2 destroy:*)",
+      "Bash(aws cloudformation delete-stack:*)",
+      "Bash(aws s3 rm:*)",
+      "Bash(aws s3 rb:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(curl*| bash*)",
+      "Bash(curl*|bash*)",
+      "Bash(wget*| bash*)",
+      "Bash(wget*|bash*)",
+      "Bash(eval:*)",
+      "Read(./.env)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/hooks/session-context.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/hooks/secret-scan.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/hooks/check-doc-sync.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/hooks/notify.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

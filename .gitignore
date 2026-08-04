@@ -19,3 +19,6 @@ cdk.context.json
 # git worktrees (isolated workspaces)
 .worktrees/
 .superpowers/
+
+# Claude Code 로컬 개인 설정 (팀 공유 금지)
+.claude/settings.local.json
