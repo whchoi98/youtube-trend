@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import PlainTextResponse, JSONResponse
 
 from app.config import Settings
 
@@ -70,6 +71,11 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         # ALB 헬스체크: 프로세스 생존만 확인한다. DynamoDB 장애가 태스크 교체 폭풍을
         # 일으키지 않도록 어떤 외부 의존에도 접근하지 않는다.
         return "ok"
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(request, exc):
+        # 프론트 계약: 모든 오류는 {"error": 한국어} + 4xx — FastAPI 기본 422 detail 배열을 노출하지 않는다
+        return JSONResponse({"error": "잘못된 요청입니다"}, status_code=400)
 
     from app.api import trending as trending_api, videos as videos_api, trends as trends_api
     app.include_router(trending_api.router)

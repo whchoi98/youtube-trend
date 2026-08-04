@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 
 from app.api.deps import get_store
 from app.categories import CATEGORIES, CATEGORY_NAMES
@@ -14,7 +15,7 @@ VALID_SCOPES = {"all"} | {cid for cid, _ in CATEGORIES}
 @router.get("/trending")
 def trending(scope: str = "all", store=Depends(get_store)):
     if scope not in VALID_SCOPES:
-        raise HTTPException(400, detail={"error": "지원하지 않는 분야입니다"})
+        return JSONResponse({"error": "지원하지 않는 분야입니다"}, status_code=400)
     snap = store.latest_snapshot(scope)
     if snap is None:
         return []

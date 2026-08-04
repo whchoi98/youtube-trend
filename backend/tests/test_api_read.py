@@ -36,7 +36,16 @@ def test_trending_includes_derived_fields(table):
 
 def test_trending_rejects_unknown_scope(table):
     client, _ = make_client(table)
-    assert client.get("/api/trending?scope=999").status_code == 400
+    res = client.get("/api/trending?scope=999")
+    assert res.status_code == 400
+    assert res.json() == {"error": "지원하지 않는 분야입니다"}
+
+
+def test_out_of_range_hours_returns_error_contract(table):
+    client, _ = make_client(table)
+    res = client.get("/api/trends/categories?hours=1")
+    assert res.status_code == 400
+    assert res.json() == {"error": "잘못된 요청입니다"}
 
 
 def test_categories_lists_fixed_eight(table):
