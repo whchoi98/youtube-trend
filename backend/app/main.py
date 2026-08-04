@@ -71,4 +71,9 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         # 일으키지 않도록 어떤 외부 의존에도 접근하지 않는다.
         return "ok"
 
+    from app.api import trending as trending_api, videos as videos_api, trends as trends_api
+    app.include_router(trending_api.router)
+    app.include_router(videos_api.router)
+    app.include_router(trends_api.router)
+
     return app
