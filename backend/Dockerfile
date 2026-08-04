@@ -13,6 +13,8 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY --from=fe /fe/dist ./static
+RUN useradd --create-home app && chown -R app:app /srv
+USER app
 ENV STATIC_DIR=/srv/static
 EXPOSE 8000
 # --factory: create_app 팩토리 사용. dev_app은 Settings.from_env()를 읽는다.

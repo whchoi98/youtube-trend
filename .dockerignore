@@ -3,3 +3,6 @@ frontend/dist
 .git
 cdk.out
 .venv
+.env
+.worktrees
+.superpowers

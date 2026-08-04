@@ -103,10 +103,12 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         @app.get("/{path:path}")
         def spa(path: str):
             # /api·/healthz는 위에서 먼저 매칭된다. 나머지는 SPA 폴백.
-            full = os.path.join(static_dir, path)
-            if path and os.path.isfile(full):
+            base = os.path.realpath(static_dir)
+            full = os.path.realpath(os.path.join(base, path))
+            # base 밖으로 탈출한 경로는 파일이 존재해도 서빙하지 않는다(SPA 폴백으로)
+            if path and full.startswith(base + os.sep) and os.path.isfile(full):
                 return FileResponse(full)
-            return FileResponse(os.path.join(static_dir, "index.html"))
+            return FileResponse(os.path.join(base, "index.html"))
 
     return app
 
