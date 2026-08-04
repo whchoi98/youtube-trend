@@ -28,6 +28,12 @@ def _build_yt(settings):
     return yt
 
 
+def _build_llm(settings):
+    """Build real BedrockClient for production path."""
+    from app.llm.bedrock import BedrockClient
+    return BedrockClient(settings.bedrock_token)
+
+
 def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -37,6 +43,9 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
 
         if app.state.yt is None:
             app.state.yt = _build_yt(settings)
+
+        if app.state.llm is None:
+            app.state.llm = _build_llm(settings)
 
         app.state.scheduler = None
         if settings.collect_enabled:
@@ -77,9 +86,10 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         # 프론트 계약: 모든 오류는 {"error": 한국어} + 4xx — FastAPI 기본 422 detail 배열을 노출하지 않는다
         return JSONResponse({"error": "잘못된 요청입니다"}, status_code=400)
 
-    from app.api import trending as trending_api, videos as videos_api, trends as trends_api
+    from app.api import trending as trending_api, videos as videos_api, trends as trends_api, brief as brief_api
     app.include_router(trending_api.router)
     app.include_router(videos_api.router)
     app.include_router(trends_api.router)
+    app.include_router(brief_api.router)
 
     return app
