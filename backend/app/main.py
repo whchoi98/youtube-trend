@@ -11,21 +11,31 @@ logging.basicConfig(level=logging.INFO, format='{"lvl":"%(levelname)s","msg":"%(
 log = logging.getLogger(__name__)
 
 
+def _build_store(settings):
+    """Build real TrendStore for production path."""
+    import boto3
+    from app.store.table import TrendStore
+    table = boto3.resource("dynamodb", region_name=settings.aws_region).Table(settings.table_name)
+    return TrendStore(table)
+
+
+def _build_yt(settings):
+    """Build real YouTubeClient for production path."""
+    from app.collector.youtube import YouTubeClient
+    yt = YouTubeClient(settings.yt_api_key)
+    yt.load_category_names()
+    return yt
+
+
 def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # Guard each dependency independently — injected values must not be overwritten.
         if app.state.store is None:
-            import boto3
-            from app.store.table import TrendStore
-            table = boto3.resource("dynamodb", region_name=settings.aws_region).Table(settings.table_name)
-            app.state.store = TrendStore(table)
+            app.state.store = _build_store(settings)
 
         if app.state.yt is None:
-            from app.collector.youtube import YouTubeClient
-            yt = YouTubeClient(settings.yt_api_key)
-            yt.load_category_names()
-            app.state.yt = yt
+            app.state.yt = _build_yt(settings)
 
         app.state.scheduler = None
         if settings.collect_enabled:
