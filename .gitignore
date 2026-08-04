@@ -1,0 +1,16 @@
+# 시크릿 — 절대 커밋하지 않는다 (선행 프로젝트에서 .env가 최초 커밋에 포함됐던 사고 재발 방지)
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# CDK
+cdk.out/
+.cdk.staging/
