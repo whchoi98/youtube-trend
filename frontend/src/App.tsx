@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { TopAll } from './tabs/TopAll'
+import { ByCategory } from './tabs/ByCategory'
+import { Trends } from './tabs/Trends'
 import { getTheme, toggleTheme, type Theme } from './theme'
 
 type TabKey = 'all' | 'category' | 'trend'
@@ -9,14 +11,6 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'category', label: '분야별 Top 10' },
   { key: 'trend', label: '추이 분석' },
 ]
-
-function ComingSoon() {
-  return (
-    <section className="state-message">
-      <p>곧 제공됩니다.</p>
-    </section>
-  )
-}
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('all')
@@ -58,8 +52,8 @@ export default function App() {
 
       <main className="app-main">
         {tab === 'all' && <TopAll key={reloadKey} />}
-        {tab === 'category' && <ComingSoon />}
-        {tab === 'trend' && <ComingSoon />}
+        {tab === 'category' && <ByCategory key={reloadKey} />}
+        {tab === 'trend' && <Trends key={reloadKey} />}
       </main>
     </div>
   )

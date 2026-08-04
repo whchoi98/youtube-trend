@@ -5,3 +5,17 @@ export function formatCount(n: number): string {
   if (n >= 10_000) return `${trimmed(n / 10_000)}만`
   return n.toLocaleString('ko-KR')
 }
+
+/**
+ * UTC 시 버킷 문자열("YYYY-MM-DDTHH")을 KST(UTC+9, DST 없음) 표기로 변환한다.
+ * 예: "2026-08-04T15" -> "8/5 0시". Date를 +9h 이동시킨 뒤 getUTC* 접근자로 값을
+ * 읽어, 실행 환경의 로컬 타임존과 무관하게 항상 KST 벽시계 값을 얻는다.
+ */
+export function formatTsKst(ts: string): string {
+  const utc = new Date(`${ts}:00:00Z`)
+  const kst = new Date(utc.getTime() + 9 * 3_600_000)
+  const month = kst.getUTCMonth() + 1
+  const day = kst.getUTCDate()
+  const hour = kst.getUTCHours()
+  return `${month}/${day} ${hour}시`
+}

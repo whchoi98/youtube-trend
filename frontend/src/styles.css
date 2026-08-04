@@ -363,3 +363,152 @@ button:hover {
   color: var(--text-muted);
   text-align: center;
 }
+
+/* ---------- 분야 칩 (ByCategory) ---------- */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.chip-skeleton {
+  width: 72px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+/* ---------- 추이 분석 탭 ---------- */
+.trends-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.trend-section h2 {
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+
+.trend-section h3 {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.trend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.trend-controls select {
+  flex: 1;
+  min-width: 220px;
+  max-width: 480px;
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.chart-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.chart-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.hint-text {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------- 브리핑 패널 ---------- */
+.brief-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brief-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.brief-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.brief-locked {
+  color: var(--badge-down-fg);
+  font-size: 13px;
+}
+
+.brief-output {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.brief-output h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.brief-text {
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text);
+}
