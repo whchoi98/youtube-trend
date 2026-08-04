@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, fetchJson } from '../api'
 import type { Card as CardData, Category } from '../types'
 import { CardGrid, CardSkeletonGrid } from '../components/CardGrid'
@@ -41,11 +41,20 @@ export function ByCategory() {
     loadCategories()
   }, [loadCategories])
 
+  // 칩을 빠르게 전환하면 이전 분야의 응답이 늦게 도착해 최신 화면을 덮어쓸 수 있다.
+  // 세대 카운터로 "지금 화면이 기다리는 요청이 맞는지" 확인한 뒤에만 상태를 반영한다.
+  const cardsSeqRef = useRef(0)
+
   const loadCards = useCallback((scope: string) => {
+    const seq = ++cardsSeqRef.current
     setCardState({ status: 'loading' })
     fetchJson<CardData[]>(`/api/trending?scope=${scope}`)
-      .then((cards) => setCardState({ status: 'ready', cards }))
+      .then((cards) => {
+        if (seq !== cardsSeqRef.current) return // 늦은 응답 폐기
+        setCardState({ status: 'ready', cards })
+      })
       .catch((err: unknown) => {
+        if (seq !== cardsSeqRef.current) return // 늦은 실패도 최신 화면에 오류를 띄우지 않는다
         setCardState({ status: 'error', message: errMessage(err, '목록을 불러오지 못했습니다') })
       })
   }, [])

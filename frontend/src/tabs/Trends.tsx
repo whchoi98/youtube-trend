@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -67,11 +67,22 @@ function VideoSeriesSection() {
     loadVideos()
   }, [loadVideos])
 
+  // 영상 선택을 빠르게 바꾸면 이전 선택의 응답이 늦게 도착해 최신 화면을 덮어쓸 수 있다.
+  // 세대 카운터로 "현재 이 결과를 기다리고 있는 요청이 맞는지"를 확인한 뒤에만 반영한다.
+  const historySeqRef = useRef(0)
+
   const loadHistory = useCallback((videoId: string) => {
+    const seq = ++historySeqRef.current
     setHistory({ status: 'loading' })
     fetchJson<{ videoId: string; points: HistoryPoint[] }>(`/api/videos/${videoId}/history?hours=168`)
-      .then((res) => setHistory({ status: 'ready', data: res.points }))
-      .catch((err: unknown) => setHistory({ status: 'error', message: errMessage(err, '시계열을 불러오지 못했습니다') }))
+      .then((res) => {
+        if (seq !== historySeqRef.current) return // 늦은 응답 폐기
+        setHistory({ status: 'ready', data: res.points })
+      })
+      .catch((err: unknown) => {
+        if (seq !== historySeqRef.current) return // 늦은 실패도 최신 화면에 오류를 띄우지 않는다
+        setHistory({ status: 'error', message: errMessage(err, '시계열을 불러오지 못했습니다') })
+      })
   }, [])
 
   useEffect(() => {
@@ -214,7 +225,15 @@ function CategoryShareSection() {
     const orderedKnown = known.filter((id) => present.has(id))
     const extra = Array.from(present).filter((id) => !known.includes(id)).sort()
     const ids = [...orderedKnown, ...extra]
-    const data: ShareRow[] = trend.data.map((b) => ({ ts: b.ts, entered: b.entered, exited: b.exited, ...b.shares }))
+    // 백엔드 shares는 그 시간대에 실제로 등장한 catId만 포함한다 — 한 시간이라도 순위권
+    // 밖으로 빠진 카테고리는 그 버킷에서 undefined가 되어 스택 AreaChart가 끊긴다.
+    // 전체 series에서 등장한 catId(ids)를 기준으로 누락분을 0으로 채운다.
+    const data: ShareRow[] = trend.data.map((b) => ({
+      ts: b.ts,
+      entered: b.entered,
+      exited: b.exited,
+      ...Object.fromEntries(ids.map((id) => [id, b.shares[id] ?? 0])),
+    }))
     return { catIds: ids, rows: data }
   }, [trend, categories])
 
