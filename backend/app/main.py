@@ -11,23 +11,22 @@ logging.basicConfig(level=logging.INFO, format='{"lvl":"%(levelname)s","msg":"%(
 log = logging.getLogger(__name__)
 
 
-def _build_real_dependencies(settings):
-    """운영 경로에서만 import — 테스트는 주입으로 우회한다."""
-    import boto3
-    from app.collector.youtube import YouTubeClient
-    from app.store.table import TrendStore
-
-    table = boto3.resource("dynamodb", region_name=settings.aws_region).Table(settings.table_name)
-    yt = YouTubeClient(settings.yt_api_key)
-    yt.load_category_names()
-    return TrendStore(table), yt
-
-
 def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if app.state.store is None or app.state.yt is None:
-            app.state.store, app.state.yt = _build_real_dependencies(settings)
+        # Guard each dependency independently — injected values must not be overwritten.
+        if app.state.store is None:
+            import boto3
+            from app.store.table import TrendStore
+            table = boto3.resource("dynamodb", region_name=settings.aws_region).Table(settings.table_name)
+            app.state.store = TrendStore(table)
+
+        if app.state.yt is None:
+            from app.collector.youtube import YouTubeClient
+            yt = YouTubeClient(settings.yt_api_key)
+            yt.load_category_names()
+            app.state.yt = yt
+
         app.state.scheduler = None
         if settings.collect_enabled:
             from apscheduler.schedulers.background import BackgroundScheduler
@@ -42,11 +41,13 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
             )
             sched.start()
             app.state.scheduler = sched
+            log.info("scheduler started: hourly-collect")
         yield
         if app.state.scheduler is not None:
             # SIGTERM → uvicorn graceful shutdown → lifespan 종료.
             # wait=False: 수집 중이어도 drain을 막지 않는다(다음 시각에 재수집됨).
             app.state.scheduler.shutdown(wait=False)
+            log.info("scheduler stopped")
 
     app = FastAPI(title="youtube-trends", lifespan=lifespan)
     app.state.settings = settings
@@ -56,6 +57,8 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
 
     @app.get("/healthz", response_class=PlainTextResponse)
     def healthz() -> str:
+        # ALB 헬스체크: 프로세스 생존만 확인한다. DynamoDB 장애가 태스크 교체 폭풍을
+        # 일으키지 않도록 어떤 외부 의존에도 접근하지 않는다.
         return "ok"
 
     return app
