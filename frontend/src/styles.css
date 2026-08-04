@@ -1,0 +1,365 @@
+/* ---------- 테마 토큰 (라이트 기본값) ---------- */
+:root {
+  --bg: #f5f6f8;
+  --bg-elevated: #ffffff;
+  --text: #1a1b1e;
+  --text-muted: #5b5f6a;
+  --border: #e2e4e9;
+  --accent: #cc0000;
+  --shadow: rgba(15, 15, 20, 0.08) 0 4px 16px;
+
+  --badge-new-bg: #e6f0ff;
+  --badge-new-fg: #1c5dd6;
+  --badge-up-bg: #e5f7ec;
+  --badge-up-fg: #1a8a4a;
+  --badge-down-bg: #fdecec;
+  --badge-down-fg: #c62828;
+  --badge-same-bg: #eef0f3;
+  --badge-same-fg: #5b5f6a;
+  --badge-category-bg: #f0eafd;
+  --badge-category-fg: #5b34c0;
+
+  --skeleton-base: #e9eaed;
+  --skeleton-shine: #f6f7f9;
+
+  --thumb-fallback: linear-gradient(135deg, #6d6ff2, #cc0000);
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  color-scheme: light dark;
+}
+
+:root[data-theme='dark'] {
+  --bg: #14151a;
+  --bg-elevated: #1e2026;
+  --text: #eceef2;
+  --text-muted: #9a9ea8;
+  --border: #2c2f38;
+  --accent: #ff5a5a;
+  --shadow: rgba(0, 0, 0, 0.4) 0 4px 16px;
+
+  --badge-new-bg: #17335f;
+  --badge-new-fg: #a9c6ff;
+  --badge-up-bg: #163829;
+  --badge-up-fg: #7be3a6;
+  --badge-down-bg: #3d1c1c;
+  --badge-down-fg: #ff9c9c;
+  --badge-same-bg: #2c2f38;
+  --badge-same-fg: #9a9ea8;
+  --badge-category-bg: #2a2440;
+  --badge-category-fg: #c9b3ff;
+
+  --skeleton-base: #23252c;
+  --skeleton-shine: #2c2f38;
+
+  --thumb-fallback: linear-gradient(135deg, #4b3fb0, #7a1f1f);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  padding: 8px 14px;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+/* ---------- 레이아웃 ---------- */
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 14px;
+  color: var(--text-muted);
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.app-main {
+  min-height: 200px;
+}
+
+/* ---------- 통계 타일 ---------- */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-tile {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ---------- 카드 그리드 ---------- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.card-thumb-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--skeleton-base);
+}
+
+.card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-thumb-fallback {
+  background: var(--thumb-fallback);
+}
+
+.rank-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-badge.rank-1 {
+  background: #d4af00;
+  color: #1a1b1e;
+}
+
+.rank-badge.rank-2 {
+  background: #b0b6c0;
+  color: #1a1b1e;
+}
+
+.rank-badge.rank-3 {
+  background: #c67a3a;
+  color: #1a1b1e;
+}
+
+.delta-slot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: calc(1.35em * 2);
+}
+
+.card-channel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ---------- 배지 ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge.new {
+  background: var(--badge-new-bg);
+  color: var(--badge-new-fg);
+}
+
+.badge.up {
+  background: var(--badge-up-bg);
+  color: var(--badge-up-fg);
+}
+
+.badge.down {
+  background: var(--badge-down-bg);
+  color: var(--badge-down-fg);
+}
+
+.badge.same {
+  background: var(--badge-same-bg);
+  color: var(--badge-same-fg);
+}
+
+.badge.category {
+  background: var(--badge-category-bg);
+  color: var(--badge-category-fg);
+  font-weight: 600;
+}
+
+.velocity {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- 스켈레톤 (로딩) ---------- */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.skeleton-block,
+.skeleton-line {
+  background: var(--skeleton-base);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.skeleton-line {
+  height: 12px;
+  margin: 4px 0;
+}
+
+.skeleton-line.short {
+  width: 70%;
+}
+
+.skeleton-line.shorter {
+  width: 45%;
+}
+
+.card.skeleton {
+  cursor: default;
+}
+
+/* ---------- 오류 / 안내 메시지 ---------- */
+.state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 16px;
+  color: var(--text-muted);
+  text-align: center;
+}

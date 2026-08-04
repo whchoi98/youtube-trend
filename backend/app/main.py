@@ -93,3 +93,10 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
     app.include_router(brief_api.router)
 
     return app
+
+
+def dev_app():
+    """로컬 개발용: uvicorn app.main:dev_app --factory --port 8000"""
+    return create_app(Settings.from_env())
+
+    return app
