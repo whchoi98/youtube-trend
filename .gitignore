@@ -14,6 +14,7 @@ frontend/dist/
 # CDK
 cdk.out/
 .cdk.staging/
+cdk.context.json
 
 # git worktrees (isolated workspaces)
 .worktrees/
