@@ -36,3 +36,8 @@ def test_build_trend_report_serializes_series():
     movers = [card(title="급상승왕")]
     _, user = prompts.build_trend_report(series, movers)
     assert "2026-08-04T08" in user and "급상승왕" in user
+
+
+def test_bool_views_render_as_zero():
+    _, user = prompts.build_brief([card(views=True)])
+    assert "조회 0" in user

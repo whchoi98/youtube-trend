@@ -22,10 +22,14 @@ def _pos(v):
     return str(v) if isinstance(v, int) and not isinstance(v, bool) else "?"
 
 
+def _int_or_zero(v):
+    return v if isinstance(v, int) and not isinstance(v, bool) else 0
+
+
 def _line(c):
     return (f"{_pos(c.get('rank'))}위: {clean_text(c.get('title'))} — "
             f"{clean_text(c.get('channel'))} ({clean_text(c.get('category'), 30)}, "
-            f"조회 {c.get('views') if isinstance(c.get('views'), int) else 0:,})")
+            f"조회 {_int_or_zero(c.get('views')):,})")
 
 
 def build_brief(cards):

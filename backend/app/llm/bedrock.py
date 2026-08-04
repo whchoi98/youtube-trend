@@ -46,10 +46,10 @@ class BedrockClient:
             # 오류 본문에 계정 ID·모델 ARN이 올 수 있다 — 로그에만 남긴다.
             log.error("bedrock status=%s body=%s", res.status_code, res.text[:500])
             raise LlmUpstreamError(res.status_code)
-        data = res.json()
         try:
+            data = res.json()
             text = data["output"]["message"]["content"][0]["text"]
-        except (KeyError, IndexError, TypeError):
-            log.error("bedrock unexpected shape keys=%s", list(data.keys()))
+        except (ValueError, KeyError, IndexError, TypeError):
+            log.error("bedrock unexpected body (first 200 chars): %s", res.text[:200])
             raise LlmUpstreamError(502)
         return text, data.get("stopReason", "")

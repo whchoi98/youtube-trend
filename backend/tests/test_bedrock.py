@@ -40,3 +40,11 @@ def test_timeout_maps_to_upstream_error():
     with pytest.raises(LlmUpstreamError) as ei:
         make(handler).converse("s", "u", 100)
     assert ei.value.status == 504
+
+
+def test_non_json_200_maps_to_502():
+    def handler(req):
+        return httpx.Response(200, content=b"not json{{{")
+    with pytest.raises(LlmUpstreamError) as ei:
+        make(handler).converse("s", "u", 100)
+    assert ei.value.status == 502
