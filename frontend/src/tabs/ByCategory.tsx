@@ -78,15 +78,13 @@ export function ByCategory() {
 
   return (
     <section>
-      <div className="chip-row" role="tablist" aria-label="분야 선택">
+      <div className="chip-row" role="group" aria-label="분야 선택">
         {catState.categories.map((c) => (
           <button
             key={c.id}
             type="button"
-            role="tab"
             className={selected === c.id ? 'chip active' : 'chip'}
             aria-pressed={selected === c.id}
-            aria-selected={selected === c.id}
             onClick={() => setSelected(c.id)}
           >
             {c.name}
