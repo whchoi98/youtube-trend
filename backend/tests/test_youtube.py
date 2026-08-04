@@ -51,3 +51,10 @@ def test_upstream_error_raises_with_status_only():
         make_client(handler).most_popular(None, 30)
     assert ei.value.status == 403
     assert "secret-internal" not in str(ei.value)  # 상류 본문 비노출
+
+
+def test_non_numeric_stats_become_zero():
+    payload = yt_payload()
+    payload["items"][0]["statistics"]["viewCount"] = "not-a-number"
+    cards = make_client(lambda r: httpx.Response(200, json=payload)).most_popular(None, 30)
+    assert cards[0]["views"] == 0

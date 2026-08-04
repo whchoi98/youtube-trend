@@ -14,6 +14,15 @@ BASE = "https://www.googleapis.com/youtube/v3"
 TIMEOUT = 10.0
 
 
+def _stat_int(v) -> int:
+    """YouTube statistics 값은 문자열 숫자다. 비정상 값은 0으로 — 카드 한 장의
+    통계 오염이 수집 사이클 전체를 중단시키지 않는다(부분 실패 격리)."""
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
+
+
 class UpstreamError(Exception):
     def __init__(self, status: int):
         super().__init__(f"youtube upstream status={status}")
@@ -57,7 +66,7 @@ class YouTubeClient:
             cards.append({
                 "rank": i, "videoId": it.get("id", ""),
                 "title": sn.get("title", ""), "channel": sn.get("channelTitle", ""),
-                "views": int(st.get("viewCount", 0)), "likes": int(st.get("likeCount", 0)),
+                "views": _stat_int(st.get("viewCount", 0)), "likes": _stat_int(st.get("likeCount", 0)),
                 "category": self.category_names.get(cat_id, "기타"), "categoryId": cat_id,
                 "thumbnail": sn.get("thumbnails", {}).get("high", {}).get("url", ""),
                 "publishedAt": sn.get("publishedAt", ""),
