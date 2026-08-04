@@ -14,3 +14,7 @@ frontend/dist/
 # CDK
 cdk.out/
 .cdk.staging/
+
+# git worktrees (isolated workspaces)
+.worktrees/
+.superpowers/
