@@ -7,6 +7,11 @@ baseline!=None → 신규 진입(NEW). viewsPerHour는 실제 경과 시간으�
 from datetime import datetime
 
 
+def _is_int(v):
+    """int 검증 — bool 제외 (bool은 int의 서브클래스라서 함정)."""
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
 def with_derived(cards, baseline, now):
     captured = None
     prev_by_id = {}
@@ -32,11 +37,11 @@ def with_derived(cards, baseline, now):
             out.append(d)
             continue
         prev_rank = prev.get("rank")
-        d["prevRank"] = prev_rank if isinstance(prev_rank, int) else None
+        d["prevRank"] = prev_rank if _is_int(prev_rank) else None
         d["delta"] = (d["prevRank"] - c["rank"]) if d["prevRank"] is not None else None
         prev_views = prev.get("views")
         hours = (now - captured).total_seconds() / 3600
-        if isinstance(prev_views, int) and isinstance(c.get("views"), int) and hours > 0:
+        if _is_int(prev_views) and _is_int(c.get("views")) and hours > 0:
             d["viewsPerHour"] = round((c["views"] - prev_views) / hours)
         else:
             d["viewsPerHour"] = None

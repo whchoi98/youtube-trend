@@ -57,3 +57,16 @@ def test_input_cards_not_mutated():
     c = card("a", 1, 100)
     with_derived([c], None, NOW)
     assert "delta" not in c
+
+
+def test_bool_prev_values_rejected():
+    base = baseline_of(2, [{"rank": True, "videoId": "a", "views": False}])
+    out = with_derived([card("a", 1, 100)], base, NOW)
+    assert out[0]["prevRank"] is None
+    assert out[0]["viewsPerHour"] is None
+
+
+def test_non_positive_elapsed_hours_yields_null():
+    base = {"capturedAt": NOW.isoformat(), "items": [card("a", 1, 50)]}
+    out = with_derived([card("a", 1, 100)], base, NOW)
+    assert out[0]["viewsPerHour"] is None  # hours == 0
