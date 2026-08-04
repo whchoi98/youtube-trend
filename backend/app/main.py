@@ -102,7 +102,11 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
 
         @app.get("/{path:path}")
         def spa(path: str):
-            # /api·/healthz는 위에서 먼저 매칭된다. 나머지는 SPA 폴백.
+            # 등록된 /api·/healthz 라우트는 이 catch-all보다 먼저 매칭된다.
+            # 미등록 /api/* 경로는 SPA 폴백 대상이 아니다 — 404 + 오류 계약 유지
+            # (여기 오는 /api/* 는 전부 미등록 경로다).
+            if path.startswith("api/"):
+                return JSONResponse({"error": "찾을 수 없습니다"}, status_code=404)
             base = os.path.realpath(static_dir)
             full = os.path.realpath(os.path.join(base, path))
             # base 밖으로 탈출한 경로는 파일이 존재해도 서빙하지 않는다(SPA 폴백으로)

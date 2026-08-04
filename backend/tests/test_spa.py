@@ -26,3 +26,15 @@ def test_spa_blocks_path_traversal(tmp_path, monkeypatch):
     res = client.get("/%2e%2e/secret.txt")
     assert "top-secret" not in res.text
     assert "spa" in res.text  # 폴백으로 처리
+
+
+def test_unknown_api_path_returns_404_not_spa(tmp_path, monkeypatch):
+    client = TestClient(make_app_with_static(tmp_path, monkeypatch))
+    res = client.get("/api/nonexistent")
+    assert res.status_code == 404
+    assert res.json() == {"error": "찾을 수 없습니다"}
+
+
+def test_registered_api_routes_still_match_before_catchall(tmp_path, monkeypatch):
+    client = TestClient(make_app_with_static(tmp_path, monkeypatch))
+    assert client.get("/api/categories").status_code == 200  # 등록 라우트는 catch-all 이전에 매칭
