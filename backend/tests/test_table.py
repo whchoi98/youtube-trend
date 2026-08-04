@@ -13,6 +13,12 @@ def test_put_snapshot_is_conditional(table):
     assert s.put_snapshot("all", NOW, [CARD]) is False  # 같은 시각 키 중복 쓰기 거부
 
 
+def test_put_snapshot_rejects_empty_items(table):
+    s = TrendStore(table)
+    assert s.put_snapshot("all", NOW, []) is False
+    assert s.latest_snapshot("all") is None  # 아무것도 저장되지 않음
+
+
 def test_latest_snapshot_returns_most_recent(table):
     s = TrendStore(table)
     s.put_snapshot("all", NOW - timedelta(hours=2), [dict(CARD, views=50)])

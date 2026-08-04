@@ -54,7 +54,7 @@ class TrendStore:
 
     def _to_snapshot(self, item):
         return {
-            "bucket": item["sk"].removeprefix("TS#"),
+            "bucket": keys.bucket_from_sk(item["sk"]),
             "capturedAt": item["capturedAt"],
             "items": json.loads(item["items"]),
             "degraded": bool(item.get("degraded", False)),
@@ -116,7 +116,7 @@ class TrendStore:
             & Key("sk").between(keys.ts_sk(keys.hour_bucket(since)),
                                 keys.ts_sk(keys.hour_bucket(until))),
         )
-        return [{"ts": i["sk"].removeprefix("TS#"),
+        return [{"ts": keys.bucket_from_sk(i["sk"]),
                  "rank": _int(i.get("rank"), default=None) if i.get("rank") is not None else None,
                  "views": _int(i.get("views"))} for i in res["Items"]]
 

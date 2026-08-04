@@ -13,6 +13,9 @@ DAILY_OFFSETS = [24, 25, 26]
 # 확대된다(선행 프로젝트 실측 0.11h → 9배 왜곡).
 MIN_AGE_HOURS = 0.75
 
+# 정렬 키 형식: 시간 버킷 앞에 접두어가 붙는다
+TS_PREFIX = "TS#"
+
 
 def hour_bucket(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
@@ -31,7 +34,12 @@ def report_pk(kind: str, scope: str) -> str:
 
 
 def ts_sk(bucket: str) -> str:
-    return f"TS#{bucket}"
+    return f"{TS_PREFIX}{bucket}"
+
+
+def bucket_from_sk(sk: str) -> str:
+    """정렬 키에서 시간 버킷 추출 (접두어 제거)."""
+    return sk.removeprefix(TS_PREFIX)
 
 
 def ttl_epoch(now: datetime, days: int) -> int:

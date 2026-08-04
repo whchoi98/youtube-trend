@@ -22,6 +22,10 @@ def test_pk_builders():
     assert keys.ts_sk("2026-08-04T09") == "TS#2026-08-04T09"
 
 
+def test_bucket_from_sk_roundtrip():
+    assert keys.bucket_from_sk(keys.ts_sk("2026-08-04T09")) == "2026-08-04T09"
+
+
 def test_ttl_epoch_is_days_after_now():
     got = keys.ttl_epoch(UTC_T, days=30)
     assert got == int(UTC_T.timestamp()) + 30 * 86400
