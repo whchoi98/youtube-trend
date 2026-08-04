@@ -48,6 +48,11 @@ cp .env.example .env
 ./scripts/deploy.sh
 ```
 
+`ORIGIN_VERIFY_TOKEN`도 최초 배포 전에 채워두는 것을 권장한다. 비워두면 CDK synth마다
+새 값이 무작위로 생성되어 재배포할 때마다 CloudFront와 ALB가 서로 다른 시점에 갱신되며,
+그 전파 지연(수 분) 동안 일부 사용자가 403을 받는다. `python3 -c "import secrets;
+print(secrets.token_urlsafe(24))"`로 한 번만 생성해 `.env`에 고정해두면 이 창이 사라진다.
+
 `./scripts/deploy.sh`는 아래를 한 번에 수행한다.
 
 1. `.env` 존재 여부와 git 추적 여부를 검사한다 (값은 어떤 경우에도 출력하지 않는다).
@@ -124,7 +129,7 @@ cp .env.example .env
 | 1 | `GET /api/trending?scope=` | Top-30 목록. `scope`는 `all` 또는 카테고리 ID(기본 `all`) | 200 (스냅샷 없으면 `[]`) | 400 유효하지 않은 `scope` |
 | 2 | `GET /api/categories` | 고정 8개 카테고리 목록 | 200 | — |
 | 3 | `GET /api/videos/{video_id}/history?hours=` | 영상별 조회수·순위 히스토리. `hours` 1~720(기본 168) | 200 | 400 범위 밖 `hours`(FastAPI 검증) |
-| 4 | `GET /api/trends/categories?hours=` | 카테고리별 점유율·진입/이탈 시계열. `hours` 2~720(기본 48) | 200 | 400 범위 밖 `hours` |
+| 4 | `GET /api/trends/categories?hours=` | 카테고리별 점유율·진입/이탈 시계열. `hours` 2~96(기본 48, DynamoDB 1MB Query 한도 안전 마진) | 200 | 400 범위 밖 `hours` |
 | 5 | `POST /api/brief` `{scope, mode}` | LLM 브리핑. `mode`는 `now`\|`daily` | 200 `{brief, cached}` | 400 잘못된 `scope`/`mode` · 409 스냅샷/기준선 없음 · 502 Bedrock 업스트림 오류 · 503 키 미설정 |
 | 6 | `POST /api/trends/report` `{scope}` | 48시간 트렌드 리포트 | 200 `{report, cached}` | 400 잘못된 `scope` · 409 스냅샷 없음 · 502 Bedrock 업스트림 오류 · 503 키 미설정 |
 

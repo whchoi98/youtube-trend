@@ -38,3 +38,10 @@ def test_unknown_api_path_returns_404_not_spa(tmp_path, monkeypatch):
 def test_registered_api_routes_still_match_before_catchall(tmp_path, monkeypatch):
     client = TestClient(make_app_with_static(tmp_path, monkeypatch))
     assert client.get("/api/categories").status_code == 200  # 등록 라우트는 catch-all 이전에 매칭
+
+
+def test_index_fallback_sets_no_cache(tmp_path, monkeypatch):
+    client = TestClient(make_app_with_static(tmp_path, monkeypatch))
+    res = client.get("/no-such-route")
+    assert res.headers["cache-control"] == "no-cache"
+    assert client.get("/app.js").headers.get("cache-control") != "no-cache"

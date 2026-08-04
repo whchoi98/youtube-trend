@@ -112,7 +112,10 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
             # base 밖으로 탈출한 경로는 파일이 존재해도 서빙하지 않는다(SPA 폴백으로)
             if path and full.startswith(base + os.sep) and os.path.isfile(full):
                 return FileResponse(full)
-            return FileResponse(os.path.join(base, "index.html"))
+            # index.html은 캐시 재검증 강제 — CloudFront가 24h TTL로 붙잡으면
+            # 재배포 후 낡은 index가 사라진 해시 자산을 참조해 사이트가 깨진다
+            return FileResponse(os.path.join(base, "index.html"),
+                                headers={"Cache-Control": "no-cache"})
 
     return app
 
