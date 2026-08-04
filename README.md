@@ -154,7 +154,7 @@ npm run dev
 테스트만 돌리려면:
 
 ```bash
-cd backend && .venv/bin/pytest -q     # 63개 테스트
+cd backend && .venv/bin/pytest -q     # 65개 테스트
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
