@@ -1,11 +1,14 @@
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { ApiError, postJson } from '../api'
 
 type Mode = 'now' | 'daily' | 'report'
 
 interface BriefResp { brief: string; baseline?: string; cached: boolean }
 interface ReportResp { report: string; cached: boolean }
-interface Result { heading: string; text: string }
+/** kind: 'llm' 는 LLM이 생성한 본문(마크다운 렌더), 'status' 는 상태/오류 안내 문구(평문 렌더). */
+interface Result { heading: string; text: string; kind: 'llm' | 'status' }
 
 const LABELS: Record<Mode, string> = {
   now: '오늘의 브리핑',
@@ -34,10 +37,10 @@ export function BriefPanel() {
     try {
       if (mode === 'report') {
         const r = await postJson<ReportResp>('/api/trends/report', { scope: 'all' })
-        setResult({ heading: headingFor(mode), text: r.report })
+        setResult({ heading: headingFor(mode), text: r.report, kind: 'llm' })
       } else {
         const r = await postJson<BriefResp>('/api/brief', { scope: 'all', mode })
-        setResult({ heading: headingFor(mode, r.baseline), text: r.brief })
+        setResult({ heading: headingFor(mode, r.baseline), text: r.brief, kind: 'llm' })
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 503) {
@@ -45,9 +48,9 @@ export function BriefPanel() {
         setDisabled(true)
         setLockMessage(e.body.error ?? '브리핑 기능이 설정되지 않았습니다')
       } else if (e instanceof ApiError && e.status === 409) {
-        setResult({ heading: LABELS[mode], text: e.body.error ?? '아직 데이터가 없습니다' })
+        setResult({ heading: LABELS[mode], text: e.body.error ?? '아직 데이터가 없습니다', kind: 'status' })
       } else {
-        setResult({ heading: LABELS[mode], text: e instanceof ApiError ? (e.body.error ?? '요청 실패') : '요청 실패' })
+        setResult({ heading: LABELS[mode], text: e instanceof ApiError ? (e.body.error ?? '요청 실패') : '요청 실패', kind: 'status' })
       }
     } finally {
       setBusy(null)
@@ -77,7 +80,13 @@ export function BriefPanel() {
       {!disabled && result && (
         <div className="brief-output">
           <h3>{result.heading}</h3>
-          <p className="brief-text">{result.text}</p>
+          {result.kind === 'llm' ? (
+            <div className="brief-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.text}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="brief-text">{result.text}</p>
+          )}
         </div>
       )}
     </div>
