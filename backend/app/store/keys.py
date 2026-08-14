@@ -33,6 +33,11 @@ def report_pk(kind: str, scope: str) -> str:
     return f"REPORT#{kind}#{scope}"
 
 
+def tags_pk() -> str:
+    """AI 태깅 결과. 전체 Top30 스냅샷 버킷 단위로 저장한다."""
+    return "TAGS#ALL"
+
+
 def ts_sk(bucket: str) -> str:
     return f"{TS_PREFIX}{bucket}"
 

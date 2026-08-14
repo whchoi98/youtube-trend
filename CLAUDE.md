@@ -2,13 +2,13 @@
 
 ## Overview
 
-YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비스다. 전체 Top30, 분야별 Top10(8개 카테고리), 추이 분석(시계열 차트·카테고리 점유율), LLM 브리핑/추이 리포트(마크다운 렌더)를 제공한다.
+YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비스다. Trend Radar 단일 페이지 홈(히어로·가로 스트립 행·인사이트 칩·테마 10종), 전체 Top30/분야별 Top10(8개 카테고리), 가속 행(시간당 조회), AI 태깅 기반 주제·연령 행, 취향 퀴즈 추천, 추이 분석(시계열 차트·카테고리 점유율), LLM 브리핑/추이 리포트(마크다운 렌더)를 제공한다.
 
 라이브: https://d2y73ug3aaah05.cloudfront.net (2026-08-04 배포, 계정 종속 — 재배포 시 URL 변동)
 
 ## Tech Stack
 
-- Backend: Python 3.12 + FastAPI (`backend/` — pytest 66개, venv는 `backend/.venv`)
+- Backend: Python 3.12 + FastAPI (`backend/` — pytest 92개, venv는 `backend/.venv`)
 - Frontend: React 18 + Vite + TypeScript (`frontend/` — recharts, react-markdown)
 - IaC: AWS CDK Python (`infra/` — 스택 `YoutubeTrendsStack`, VPC existing/new 2모드)
 - Container: Docker 멀티스테이지 (`backend/Dockerfile`, 빌드 컨텍스트 = 저장소 루트)
@@ -20,17 +20,20 @@ YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비
 
 ```text
 backend/            - FastAPI 앱 + 테스트
-  app/api/          - 라우터 (trending, trends, videos, brief, deps)
+  app/api/          - 라우터 (trending, trends, videos, brief, home, deps)
   app/collector/    - YouTube API 수집 (youtube.py, run.py)
   app/llm/          - Bedrock 호출·프롬프트 (bedrock.py, prompts.py)
   app/store/        - DynamoDB 접근 (table.py, keys.py — 키 규칙 단일 정의)
   app/derive.py     - 파생 지표 계산
   app/aggregate.py  - 카테고리 집계
-  tests/            - pytest 66개 (moto 기반)
-frontend/           - React SPA
-  src/tabs/         - 3탭 (TopAll, ByCategory, Trends)
-  src/components/   - Badge, BriefPanel, Card, CardGrid
+  app/home.py       - 홈 행 구성·인사이트·퀴즈 추천 (순수 로직)
+  app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
+  tests/            - pytest 92개 (moto 기반)
+frontend/           - React SPA (Trend Radar 단일 페이지)
+  src/components/   - Hero, Row(타일/스트립), QuizModal, ThemeModal, DetailModal,
+                      TrendsPanel, BriefPanel, InsightChips, Modal
   src/api.ts        - 단일 API 클라이언트
+  src/themes.ts     - 테마 10종 정의 (CSS 변수 세트는 styles.css와 동기)
 infra/              - CDK Python (app.py, stacks/network.py, stacks/service.py)
 scripts/            - deploy.sh, smoke.sh
 docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, runbooks/)
@@ -38,7 +41,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## Key Commands
 
-- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (66개)
+- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (92개)
 - 프론트 게이트: `cd frontend && npx tsc --noEmit && npm run build`
 - 배포: `./scripts/deploy.sh`
 - 스모크: `./scripts/smoke.sh <SiteUrl>`
@@ -46,6 +49,8 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## API Surface
 
+- `GET /api/home` — 홈 조합: 히어로(1위+차트인 시간)·인사이트 칩·행 구성(top10/accel/topic/age/category)·태그 병합
+- `POST /api/quiz {mood, time, style}` — 취향 퀴즈 → 유형명 + 맞춤 추천 카드 (결정적, LLM 미호출)
 - `GET /api/trending?scope=all|{catId}` — 전체 Top30 / 카테고리 Top10
 - `GET /api/categories` — 카테고리 목록
 - `GET /api/videos/{id}/history?hours` — 개별 영상 시계열

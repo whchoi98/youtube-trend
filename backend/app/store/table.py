@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 SNAPSHOT_TTL_DAYS = 30
 REPORT_TTL_DAYS = 2
+TAGS_TTL_DAYS = 2
 
 
 def _int(v, default=0):
@@ -67,12 +68,19 @@ class TrendStore:
         )
         return self._to_snapshot(res["Items"][0]) if res["Items"] else None
 
-    def baseline_snapshot(self, scope, now, offsets, min_age_hours=0.0):
+    def baseline_snapshot(self, scope, now, offsets, min_age_hours=0.0,
+                          exclude_bucket=None):
         """오프셋(시간) 순서대로 폴백 조회. 절대 예외를 던지지 않는다 —
-        기준 스냅샷 부재는 정상 상태(배지 없는 응답)이지 오류가 아니다."""
+        기준 스냅샷 부재는 정상 상태(배지 없는 응답)이지 오류가 아니다.
+
+        exclude_bucket: 최신 스냅샷 자신의 버킷. 수집이 한 사이클 빠지면
+        오프셋 버킷이 최신 스냅샷과 겹쳐 자기 자신과 비교하게 되는데, 그러면
+        "비교 불가(null)"가 실측 0으로 위장된다 — 반드시 건너뛴다."""
         try:
             for off in offsets:
                 bucket = keys.hour_bucket(now - timedelta(hours=off))
+                if exclude_bucket is not None and bucket == exclude_bucket:
+                    continue
                 res = self.table.get_item(
                     Key={"pk": keys.snap_pk(scope), "sk": keys.ts_sk(bucket)})
                 item = res.get("Item")
@@ -119,6 +127,31 @@ class TrendStore:
         return [{"ts": keys.bucket_from_sk(i["sk"]),
                  "rank": _int(i.get("rank"), default=None) if i.get("rank") is not None else None,
                  "views": _int(i.get("views"))} for i in res["Items"]]
+
+    # -- AI 태깅 ----------------------------------------------------------
+    def get_tags(self, bucket):
+        res = self.table.get_item(
+            Key={"pk": keys.tags_pk(), "sk": keys.ts_sk(bucket)})
+        item = res.get("Item")
+        return json.loads(item["tags"]) if item else None
+
+    def put_tags(self, bucket, tags, now) -> bool:
+        """같은 버킷 선착 1회만 저장(멱등). LLM 출력은 비결정적이라 나중 쓰기가
+        먼저 것을 덮으면 폴링 중인 클라이언트가 보는 태그가 뒤바뀐다."""
+        try:
+            self.table.put_item(
+                Item={
+                    "pk": keys.tags_pk(), "sk": keys.ts_sk(bucket),
+                    "tags": json.dumps(tags, ensure_ascii=False),
+                    "expireAt": keys.ttl_epoch(now, TAGS_TTL_DAYS),
+                },
+                ConditionExpression="attribute_not_exists(pk)",
+            )
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return False  # 다른 태스크가 먼저 썼다 — 정상 흐름
+            raise
 
     # -- LLM 리포트 캐시 --------------------------------------------------
     def get_report(self, kind, scope, bucket):

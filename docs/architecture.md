@@ -11,26 +11,26 @@
 
 ## System Overview
 
-YouTube Trends is a single-container full-stack service. One ECS Fargate (ARM64) task runs a FastAPI application that serves both the built React SPA and the `/api` endpoints, and hosts an in-process APScheduler that collects the YouTube KR most-popular chart (Top 30 overall + Top 10 for 8 fixed categories) every hour into a single DynamoDB table. CloudFront fronts an internet-facing ALB; the ALB accepts traffic only from CloudFront (managed prefix list + `X-Origin-Verify` header). LLM briefings and trend reports are generated on demand through the Bedrock Converse REST API (`global.anthropic.claude-sonnet-4-6`, Seoul endpoint, Bearer auth) and cached per hour bucket in the same table.
+YouTube Trends is a single-container full-stack service. One ECS Fargate (ARM64) task runs a FastAPI application that serves both the built React SPA — Trend Radar, a single-page redesign that replaced the previous 3-tab UI — and the `/api` endpoints, and hosts an in-process APScheduler that collects the YouTube KR most-popular chart (Top 30 overall + Top 10 for 8 fixed categories) every hour into a single DynamoDB table. Each hourly collection is followed by an AI tagging step: one Bedrock Converse call per hour bucket assigns topic/age/vibe tags to the overall snapshot (idempotent — a no-op if tags already exist, skipped entirely when no Bedrock token is set). The SPA is driven by a single composition endpoint, `GET /api/home` (hero + row strips + null-safe insights), plus a deterministic taste quiz, `POST /api/quiz` (no LLM call). CloudFront fronts an internet-facing ALB; the ALB accepts traffic only from CloudFront (managed prefix list + `X-Origin-Verify` header). LLM briefings and trend reports are generated on demand through the Bedrock Converse REST API (`global.anthropic.claude-sonnet-4-6`, Seoul endpoint, Bearer auth) and cached per hour bucket in the same table.
 
-The primary flows are: hourly collection (scheduler → YouTube Data API v3 → DynamoDB, conditional write) and read (browser → CloudFront → ALB → FastAPI → DynamoDB, plus Bedrock for LLM endpoints).
+The primary flows are: hourly collection (scheduler → YouTube Data API v3 → DynamoDB, conditional write, then the AI tagging step → Bedrock Converse → DynamoDB) and read (browser → CloudFront → ALB → FastAPI → DynamoDB — the home screen through the `/api/home` composition endpoint — plus Bedrock for LLM endpoints).
 
 ## Components
 
 ### Presentation Layer
 - **CloudFront Distribution (`Dist`)** -- Serves the whole site over HTTPS. Default behavior uses `CACHING_OPTIMIZED` for hashed static assets; the `/api/*` behavior uses `CACHING_DISABLED` with `ALL_VIEWER_EXCEPT_HOST_HEADER` and allows all methods.
-- **React SPA (`frontend/`)** -- React 18 + Vite + TypeScript, recharts for time-series charts, react-markdown for LLM report rendering. Built in the first Docker stage and served by FastAPI from `/srv/static`; `index.html` is returned with `Cache-Control: no-cache`.
+- **React SPA (`frontend/`)** -- React 18 + Vite + TypeScript. Trend Radar single page: top bar + hero + insight chips + scroll-snap row strips + bottom panels (category-share trends, AI brief) + modals (quiz, theme, video detail), polling `GET /api/home` every 60 seconds with a generation-token race guard; 10 selectable `[data-theme]` CSS-variable themes. recharts for time-series charts, react-markdown for LLM report rendering. Built in the first Docker stage and served by FastAPI from `/srv/static`; `index.html` is returned with `Cache-Control: no-cache`.
 
 ### Query Layer
 - **ALB (`Alb`)** -- Internet-facing; default listener action is a fixed `403`. A priority-1 rule forwards only requests carrying the correct `X-Origin-Verify` header to the target group (container port 8000, health check `/healthz`).
-- **FastAPI app (`backend/app/`)** -- Routers `trending`, `videos`, `trends`, `brief`. Every error follows the contract `{"error": <Korean message>}` with a 4xx/5xx status (FastAPI's default 422 detail array is overridden to 400). A catch-all route serves the SPA and returns `404` for unregistered `/api/*` paths.
+- **FastAPI app (`backend/app/`)** -- Routers `trending`, `videos`, `trends`, `brief`, `home` (the `home` router serves the `GET /api/home` composition endpoint and the deterministic `POST /api/quiz`). Every error follows the contract `{"error": <Korean message>}` with a 4xx/5xx status (FastAPI's default 422 detail array is overridden to 400). A catch-all route serves the SPA and returns `404` for unregistered `/api/*` paths.
 
 ### Processing Layer
-- **APScheduler collector (`backend/app/collector/`)** -- `BackgroundScheduler` cron at minute 0 (UTC) runs `collect_all`: overall Top 30 first (cycle aborts if it fails), then 8 category Top 10s with per-category fallback — an unsupported/failed category is derived from the overall list and marked `degraded`. Snapshots are written with `attribute_not_exists(pk)` so concurrent tasks cannot double-write.
+- **APScheduler collector (`backend/app/collector/`)** -- `BackgroundScheduler` cron at minute 0 (UTC) runs `collect_all`: overall Top 30 first (cycle aborts if it fails), then 8 category Top 10s with per-category fallback — an unsupported/failed category is derived from the overall list and marked `degraded`. Snapshots are written with `attribute_not_exists(pk)` so concurrent tasks cannot double-write. Each hourly cycle then runs the AI tagging step (`backend/app/tagging.py`, `ensure_tags`): one Bedrock Converse call per hour bucket assigns topic/age/vibe tags to the overall snapshot — idempotent (no-op when tags already exist), skipped entirely when no Bedrock token is set, and retried next cycle on failure (nothing is stored). The same tagging also runs once right after startup.
 - **Bedrock LLM (`backend/app/llm/`)** -- Direct Converse REST call to `global.anthropic.claude-sonnet-4-6` on the `ap-northeast-2` endpoint with `Authorization: Bearer` (no SigV4/boto3). A missing token raises `LlmDisabled` → `503`; upstream failures map to `502` with the upstream status attached.
 
 ### Storage Layer
-- **DynamoDB (`TrendTable`)** -- Single table, `pk`/`sk` string keys, `PAY_PER_REQUEST`. Key families: `SNAP#ALL` / `SNAP#CAT#{id}` (scope snapshots), `VID#{videoId}` (per-video time series), `REPORT#{kind}#{scope}` (LLM cache). Sort key `TS#YYYY-MM-DDTHH` (UTC hour bucket). TTL attribute `expireAt`: 30 days for snapshots and video points, 2 days for reports.
+- **DynamoDB (`TrendTable`)** -- Single table, `pk`/`sk` string keys, `PAY_PER_REQUEST`. Key families: `SNAP#ALL` / `SNAP#CAT#{id}` (scope snapshots), `VID#{videoId}` (per-video time series), `REPORT#{kind}#{scope}` (LLM cache), `TAGS#ALL` (hourly AI tags). Sort key `TS#YYYY-MM-DDTHH` (UTC hour bucket). TTL attribute `expireAt`: 30 days for snapshots and video points, 2 days for reports and tags.
 - **Secrets Manager (`youtube-trends/app`)** -- `scripts/deploy.sh` pushes `YT_API_KEY` and `AWS_BEARER_TOKEN_BEDROCK` before `cdk deploy`; the stack references the secret by name only, and ECS injects values at container start. Secret values never appear in the template or image.
 
 ### Security Layer
@@ -61,7 +61,7 @@ flowchart TB
   end
 
   subgraph processing[Processing Layer]
-    SCHED[APScheduler cron minute=0<br/>collect_all]
+    SCHED[APScheduler cron minute=0<br/>collect_all + AI tagging]
     LLM[Bedrock Converse<br/>claude-sonnet-4-6, Bearer auth]
   end
 
@@ -79,6 +79,7 @@ flowchart TB
   API -->|on demand, hourly cache| LLM
   SCHED -->|hourly fetch| YT
   SCHED -->|conditional write| DDB
+  SCHED -->|tags: 1 Converse call per bucket| LLM
   SM -.->|inject at task start| API
 ```
 
@@ -88,6 +89,7 @@ flowchart TB
 flowchart LR
   subgraph collect[Collection path - hourly]
     SCHED[APScheduler] --> YT([YouTube API v3]) --> COLL[collect_all] --> DDB[(DynamoDB)]
+    COLL --> TAG[ensure_tags AI tagging<br/>1 Bedrock Converse call per bucket] --> DDB
   end
   subgraph read[Read path - on request]
     Browser([Browser]) --> CF[CloudFront] --> ALB[ALB] --> API[FastAPI] --> DDB
@@ -139,26 +141,26 @@ flowchart LR
 
 ## 시스템 개요
 
-YouTube Trends는 단일 컨테이너 풀스택 서비스다. ECS Fargate(ARM64) 태스크 하나가 FastAPI 애플리케이션을 실행하며, 이 앱이 빌드된 React SPA와 `/api` 엔드포인트를 함께 서빙하고, 프로세스 내 APScheduler가 매시 정각 YouTube KR 인기 급상승 차트(전체 Top 30 + 고정 8개 카테고리 Top 10)를 수집해 단일 DynamoDB 테이블에 저장한다. CloudFront가 인터넷 페이싱 ALB 앞에 서고, ALB는 CloudFront에서 온 트래픽만 허용한다(관리형 prefix list + `X-Origin-Verify` 헤더). LLM 브리핑과 추이 리포트는 Bedrock Converse REST API(`global.anthropic.claude-sonnet-4-6`, 서울 엔드포인트, Bearer 인증)로 요청 시 생성되며 같은 테이블에 시간 버킷 단위로 캐시된다.
+YouTube Trends는 단일 컨테이너 풀스택 서비스다. ECS Fargate(ARM64) 태스크 하나가 FastAPI 애플리케이션을 실행하며, 이 앱이 빌드된 React SPA — 기존 3탭 UI를 대체한 단일 페이지 개편판 Trend Radar — 와 `/api` 엔드포인트를 함께 서빙하고, 프로세스 내 APScheduler가 매시 정각 YouTube KR 인기 급상승 차트(전체 Top 30 + 고정 8개 카테고리 Top 10)를 수집해 단일 DynamoDB 테이블에 저장한다. 매시 수집 뒤에는 AI 태깅 단계가 이어진다: 시간 버킷당 Bedrock Converse 1콜로 전체 스냅샷에 주제/연령/무드 태그를 부여한다(멱등 — 태그가 이미 있으면 no-op, Bedrock 토큰 미설정 시 전체 생략). SPA는 단일 조합 엔드포인트 `GET /api/home`(히어로 + 행 스트립 + null 안전 인사이트)과 결정적 취향 퀴즈 `POST /api/quiz`(LLM 미호출)로 구동된다. CloudFront가 인터넷 페이싱 ALB 앞에 서고, ALB는 CloudFront에서 온 트래픽만 허용한다(관리형 prefix list + `X-Origin-Verify` 헤더). LLM 브리핑과 추이 리포트는 Bedrock Converse REST API(`global.anthropic.claude-sonnet-4-6`, 서울 엔드포인트, Bearer 인증)로 요청 시 생성되며 같은 테이블에 시간 버킷 단위로 캐시된다.
 
-주 흐름은 두 가지다. 시간별 수집(스케줄러 → YouTube Data API v3 → DynamoDB 조건부 쓰기)과 조회(브라우저 → CloudFront → ALB → FastAPI → DynamoDB, LLM 엔드포인트는 추가로 Bedrock 호출)다.
+주 흐름은 두 가지다. 시간별 수집(스케줄러 → YouTube Data API v3 → DynamoDB 조건부 쓰기, 이어서 AI 태깅 단계 → Bedrock Converse → DynamoDB)과 조회(브라우저 → CloudFront → ALB → FastAPI → DynamoDB — 홈 화면은 `/api/home` 조합 엔드포인트를 거친다 — LLM 엔드포인트는 추가로 Bedrock 호출)다.
 
 ## 구성 요소
 
 ### Presentation 레이어
 - **CloudFront Distribution(`Dist`)** -- 사이트 전체를 HTTPS로 서빙한다. 기본 동작은 해시 자산용 `CACHING_OPTIMIZED`, `/api/*` 동작은 `CACHING_DISABLED` + `ALL_VIEWER_EXCEPT_HOST_HEADER`이며 모든 메서드를 허용한다.
-- **React SPA(`frontend/`)** -- React 18 + Vite + TypeScript. 시계열 차트는 recharts, LLM 리포트 렌더는 react-markdown을 쓴다. Docker 첫 번째 스테이지에서 빌드되어 FastAPI가 `/srv/static`에서 서빙하고, `index.html`은 `Cache-Control: no-cache`로 반환된다.
+- **React SPA(`frontend/`)** -- React 18 + Vite + TypeScript. Trend Radar 단일 페이지: 톱바 + 히어로 + 인사이트 칩 + 스크롤 스냅 행 스트립 + 하단 패널(카테고리 점유율 추이, AI 브리핑) + 모달(퀴즈·테마·영상 상세) 구성이며, `GET /api/home`을 60초 간격으로 폴링하고 세대 토큰 레이스 가드를 적용한다. `[data-theme]` CSS 변수 테마 10종을 선택할 수 있다. 시계열 차트는 recharts, LLM 리포트 렌더는 react-markdown을 쓴다. Docker 첫 번째 스테이지에서 빌드되어 FastAPI가 `/srv/static`에서 서빙하고, `index.html`은 `Cache-Control: no-cache`로 반환된다.
 
 ### Query 레이어
 - **ALB(`Alb`)** -- 인터넷 페이싱이며 리스너 기본 동작은 고정 `403`이다. priority 1 규칙이 올바른 `X-Origin-Verify` 헤더를 가진 요청만 타깃 그룹(컨테이너 포트 8000, 헬스체크 `/healthz`)으로 전달한다.
-- **FastAPI 앱(`backend/app/`)** -- `trending`, `videos`, `trends`, `brief` 라우터로 구성된다. 모든 오류는 `{"error": 한국어 메시지}` + 4xx/5xx 계약을 따른다(FastAPI 기본 422 detail 배열은 400으로 대체). catch-all 라우트가 SPA를 서빙하고 미등록 `/api/*` 경로에는 `404`를 반환한다.
+- **FastAPI 앱(`backend/app/`)** -- `trending`, `videos`, `trends`, `brief`, `home` 라우터로 구성된다(`home` 라우터가 조합 엔드포인트 `GET /api/home`과 결정적 `POST /api/quiz`를 서빙한다). 모든 오류는 `{"error": 한국어 메시지}` + 4xx/5xx 계약을 따른다(FastAPI 기본 422 detail 배열은 400으로 대체). catch-all 라우트가 SPA를 서빙하고 미등록 `/api/*` 경로에는 `404`를 반환한다.
 
 ### Processing 레이어
-- **APScheduler 수집기(`backend/app/collector/`)** -- `BackgroundScheduler`가 UTC 매시 정각에 `collect_all`을 실행한다. 전체 Top 30을 먼저 수집하고(실패 시 사이클 전체 중단), 8개 카테고리 Top 10은 카테고리 단위로 폴백한다 — 미지원/실패 카테고리는 전체 목록에서 파생하고 `degraded`로 표시한다. 스냅샷은 `attribute_not_exists(pk)` 조건부 쓰기라 동시 태스크가 이중 기록할 수 없다.
+- **APScheduler 수집기(`backend/app/collector/`)** -- `BackgroundScheduler`가 UTC 매시 정각에 `collect_all`을 실행한다. 전체 Top 30을 먼저 수집하고(실패 시 사이클 전체 중단), 8개 카테고리 Top 10은 카테고리 단위로 폴백한다 — 미지원/실패 카테고리는 전체 목록에서 파생하고 `degraded`로 표시한다. 스냅샷은 `attribute_not_exists(pk)` 조건부 쓰기라 동시 태스크가 이중 기록할 수 없다. 매시 수집 사이클 뒤에는 AI 태깅 단계(`backend/app/tagging.py`, `ensure_tags`)가 이어진다 — 시간 버킷당 Bedrock Converse 1콜로 전체 스냅샷에 주제/연령/무드 태그를 부여하며, 멱등이고(태그가 이미 있으면 no-op) Bedrock 토큰 미설정 시 전체를 건너뛰며 실패 시 저장 없이 다음 사이클에 재시도한다. 기동 직후에도 같은 태깅이 1회 실행된다.
 - **Bedrock LLM(`backend/app/llm/`)** -- `ap-northeast-2` 엔드포인트의 `global.anthropic.claude-sonnet-4-6`에 `Authorization: Bearer`로 Converse REST를 직접 호출한다(SigV4/boto3 미사용). 토큰 미설정은 `LlmDisabled` → `503`, 상류 실패는 상류 상태 코드를 담아 `502`로 매핑된다.
 
 ### Storage 레이어
-- **DynamoDB(`TrendTable`)** -- 단일 테이블, `pk`/`sk` 문자열 키, `PAY_PER_REQUEST`. 키 패밀리는 `SNAP#ALL` / `SNAP#CAT#{id}`(스코프 스냅샷), `VID#{videoId}`(영상 시계열), `REPORT#{kind}#{scope}`(LLM 캐시)다. 정렬 키는 `TS#YYYY-MM-DDTHH`(UTC 시간 버킷)이며, TTL 속성 `expireAt`은 스냅샷·영상 포인트 30일, 리포트 2일이다.
+- **DynamoDB(`TrendTable`)** -- 단일 테이블, `pk`/`sk` 문자열 키, `PAY_PER_REQUEST`. 키 패밀리는 `SNAP#ALL` / `SNAP#CAT#{id}`(스코프 스냅샷), `VID#{videoId}`(영상 시계열), `REPORT#{kind}#{scope}`(LLM 캐시), `TAGS#ALL`(시간별 AI 태그)다. 정렬 키는 `TS#YYYY-MM-DDTHH`(UTC 시간 버킷)이며, TTL 속성 `expireAt`은 스냅샷·영상 포인트 30일, 리포트·태그 2일이다.
 - **Secrets Manager(`youtube-trends/app`)** -- `scripts/deploy.sh`가 `cdk deploy` 전에 `YT_API_KEY`와 `AWS_BEARER_TOKEN_BEDROCK`을 push하고, 스택은 시크릿을 이름으로만 참조하며, ECS가 컨테이너 기동 시 값을 주입한다. 시크릿 값은 템플릿과 이미지에 절대 나타나지 않는다.
 
 ### Security 레이어
@@ -189,7 +191,7 @@ flowchart TB
   end
 
   subgraph processing[Processing Layer]
-    SCHED[APScheduler cron minute=0<br/>collect_all]
+    SCHED[APScheduler cron minute=0<br/>collect_all + AI tagging]
     LLM[Bedrock Converse<br/>claude-sonnet-4-6, Bearer auth]
   end
 
@@ -207,6 +209,7 @@ flowchart TB
   API -->|on demand, hourly cache| LLM
   SCHED -->|hourly fetch| YT
   SCHED -->|conditional write| DDB
+  SCHED -->|tags: 1 Converse call per bucket| LLM
   SM -.->|inject at task start| API
 ```
 
@@ -216,6 +219,7 @@ flowchart TB
 flowchart LR
   subgraph collect[Collection path - hourly]
     SCHED[APScheduler] --> YT([YouTube API v3]) --> COLL[collect_all] --> DDB[(DynamoDB)]
+    COLL --> TAG[ensure_tags AI tagging<br/>1 Bedrock Converse call per bucket] --> DDB
   end
   subgraph read[Read path - on request]
     Browser([Browser]) --> CF[CloudFront] --> ALB[ALB] --> API[FastAPI] --> DDB

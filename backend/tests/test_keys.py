@@ -19,6 +19,7 @@ def test_pk_builders():
     assert keys.snap_pk("10") == "SNAP#CAT#10"
     assert keys.vid_pk("abc123") == "VID#abc123"
     assert keys.report_pk("brief-now", "all") == "REPORT#brief-now#all"
+    assert keys.tags_pk() == "TAGS#ALL"
     assert keys.ts_sk("2026-08-04T09") == "TS#2026-08-04T09"
 
 

@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add Trend Radar single-page home: hero for the current #1 video (maxres backdrop, chart tenure), horizontally scrolling strips (Top-10 with big rank numerals, accelerating-now, per-category), computed insight chips, and 60-second auto refresh
+- Add `GET /api/home` server-side composition endpoint (hero, insights, rows, tag join) and `POST /api/quiz` deterministic taste-quiz recommendations
+- Add batch AI tagging pipeline (one Bedrock call per collection bucket, idempotent, silently skipped without a token) powering topic/age rows and tag chips
+- Add ten selectable UI themes as CSS variable sets with a theme picker modal and localStorage persistence (legacy light/dark values migrated)
+- Add video detail modal preserving per-video rank/views history charts; tiles show NEW/rank-delta badges and views-per-hour velocity
+
+### Changed
+- Replace the three-tab layout with the single-page Trend Radar; category share and LLM briefing/report panels moved to the bottom of the home page
+
 ## [0.1.0] - 2026-08-04
 
 ### Added
@@ -48,6 +58,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 따릅니다.
 
 ## [Unreleased]
+
+### Added
+- Trend Radar 단일 페이지 홈 추가: 현재 1위 영상 히어로(maxres 배경, 차트인 시간), 가로 스크롤 스트립(큰 순위 숫자 Top-10, 지금 가속 중, 분야별), 계산형 인사이트 칩, 60초 자동 새로고침
+- 서버 조합 엔드포인트 `GET /api/home`(히어로·인사이트·행 구성·태그 조인)과 결정적 취향 퀴즈 추천 `POST /api/quiz` 추가
+- 배치 AI 태깅 파이프라인 추가(수집 버킷당 Bedrock 1콜, 멱등, 토큰 부재 시 조용히 생략) — 주제/연령 행과 태그 칩 제공
+- CSS 변수 세트 기반 UI 테마 10종과 테마 선택 모달, localStorage 유지 추가(기존 light/dark 값 마이그레이션)
+- 영상 상세 모달 추가(영상별 순위/조회수 히스토리 차트 보존), 타일에 NEW/순위 델타 배지와 시간당 조회 속도 표시
+
+### Changed
+- 3탭 레이아웃을 단일 페이지 Trend Radar로 교체, 카테고리 점유율·LLM 브리핑/리포트 패널은 홈 하단으로 이동
 
 ## [0.1.0] - 2026-08-04
 

@@ -20,8 +20,10 @@ def trending(scope: str = "all", store=Depends(get_store)):
     if snap is None:
         return []
     now = datetime.now(timezone.utc)
+    # exclude_bucket=자기 버킷: 수집 공백 시 자기 자신과 비교하지 않는다(null vs 0 계약)
     baseline = store.baseline_snapshot(scope, now, keys.RECENT_OFFSETS,
-                                       min_age_hours=keys.MIN_AGE_HOURS)
+                                       min_age_hours=keys.MIN_AGE_HOURS,
+                                       exclude_bucket=snap["bucket"])
     return with_derived(snap["items"], baseline, now)
 
 

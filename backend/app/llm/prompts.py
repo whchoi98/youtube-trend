@@ -55,6 +55,37 @@ def build_daily(cards, baseline):
     return SYSTEM, user
 
 
+# AI 태깅 고정 어휘. topics는 8개 분야명과 겹치지 않는 교차 주제만 담는다
+# (겹치면 홈의 주제 행이 분야 행과 중복된다). vibe는 취향 퀴즈 선택지 공간과
+# 동일해 퀴즈 매칭에 직접 쓰인다.
+TOPIC_VOCAB = ["먹방", "브이로그", "챌린지", "커버·댄스", "리뷰·정보", "키즈", "이슈", "하이라이트"]
+AGE_VOCAB = ["10대", "20대", "3040", "전연령"]
+VIBE_VOCAB = ["힐링", "도파민", "낮", "심야", "몰입", "가볍게"]
+
+TAGS_SYSTEM = (
+    "당신은 YouTube 한국 트렌드 분류기다. 반드시 유효한 JSON 객체 하나만 출력한다. "
+    "코드 펜스·설명·주석을 붙이지 마라."
+)
+
+
+def build_tags(cards):
+    lines = [
+        f"{clean_text(c.get('videoId'), 20)}: {clean_text(c.get('title'))} — "
+        f"{clean_text(c.get('channel'))} ({clean_text(c.get('category'), 30)})"
+        for c in cards[:MAX_ITEMS]
+    ]
+    user = (
+        "다음은 현재 YouTube 한국 급상승 영상 목록이다(형식: videoId: 제목 — 채널 (분야)).\n"
+        + "\n".join(lines) +
+        "\n\n각 영상을 아래 고정 어휘로만 태깅해 JSON 객체 하나로 답하라.\n"
+        f"- topics: {', '.join(TOPIC_VOCAB)} 중 0~2개 배열 (해당 없으면 빈 배열)\n"
+        f"- age: 주 시청 연령 추정 — {', '.join(AGE_VOCAB)} 중 1개\n"
+        f"- vibe: 시청 무드 — {', '.join(VIBE_VOCAB)} 중 가장 어울리는 1개\n"
+        '출력 형식: {"<videoId>": {"topics": [], "age": "", "vibe": ""}, ...}'
+    )
+    return TAGS_SYSTEM, user
+
+
 def build_trend_report(series, movers):
     share_lines = [
         f"{s['ts']}: 점유 {s['shares']} 진입 {s['entered']} 이탈 {s['exited']}"

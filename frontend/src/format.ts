@@ -6,6 +6,21 @@ export function formatCount(n: number): string {
   return n.toLocaleString('ko-KR')
 }
 
+/** ISO 시각을 KST(UTC+9) "HH:MM" 시계 표기로 변환한다. 로컬 타임존과 무관. */
+export function formatClockKst(iso: string): string {
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return ''
+  const kst = new Date(t + 9 * 3_600_000)
+  const hh = String(kst.getUTCHours()).padStart(2, '0')
+  const mm = String(kst.getUTCMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
+/** 카드/히어로에서 YouTube 시청 URL 조립 — 항상 새 탭으로 연다. */
+export function youtubeUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`
+}
+
 /**
  * UTC 시 버킷 문자열("YYYY-MM-DDTHH")을 KST(UTC+9, DST 없음) 표기로 변환한다.
  * 예: "2026-08-04T15" -> "8/5 0시". Date를 +9h 이동시킨 뒤 getUTC* 접근자로 값을

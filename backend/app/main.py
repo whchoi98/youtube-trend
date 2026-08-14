@@ -51,14 +51,29 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         if settings.collect_enabled:
             from apscheduler.schedulers.background import BackgroundScheduler
             from app.collector.run import collect_all
+            from app.tagging import ensure_tags
+
+            def _tag_quietly():
+                # 태그는 부가 정보 — 실패해도 수집·서빙에 영향 없이 로그만 남긴다
+                try:
+                    ensure_tags(app.state.store, app.state.llm,
+                                datetime.now(timezone.utc))
+                except Exception:
+                    log.exception("tagging job failed")
+
+            def _collect_and_tag():
+                collect_all(app.state.store, app.state.yt,
+                            datetime.now(timezone.utc))
+                _tag_quietly()
 
             sched = BackgroundScheduler(timezone="UTC")
             sched.add_job(
-                lambda: collect_all(app.state.store, app.state.yt,
-                                    datetime.now(timezone.utc)),
+                _collect_and_tag,
                 trigger="cron", minute=0, id="hourly-collect",
                 misfire_grace_time=300, coalesce=True,
             )
+            # 기동 직후 1회: 재배포 시 최신 스냅샷이 미태깅인 최대 59분 공백을 메운다
+            sched.add_job(_tag_quietly, id="startup-tags")
             sched.start()
             app.state.scheduler = sched
             log.info("scheduler started: hourly-collect")
@@ -86,11 +101,14 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
         # 프론트 계약: 모든 오류는 {"error": 한국어} + 4xx — FastAPI 기본 422 detail 배열을 노출하지 않는다
         return JSONResponse({"error": "잘못된 요청입니다"}, status_code=400)
 
-    from app.api import trending as trending_api, videos as videos_api, trends as trends_api, brief as brief_api
+    from app.api import (trending as trending_api, videos as videos_api,
+                         trends as trends_api, brief as brief_api,
+                         home as home_api)
     app.include_router(trending_api.router)
     app.include_router(videos_api.router)
     app.include_router(trends_api.router)
     app.include_router(brief_api.router)
+    app.include_router(home_api.router)
 
     import os
     static_dir = os.environ.get("STATIC_DIR", "/srv/static")

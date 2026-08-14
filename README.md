@@ -7,7 +7,7 @@
 <a href="#english"><img src="https://img.shields.io/badge/lang-English-blue.svg" alt="English"></a>
 <a href="#korean"><img src="https://img.shields.io/badge/lang-한국어-red.svg" alt="Korean"></a>
 
-Collect YouTube KR trending data hourly, visualize rank movement and category share, and generate LLM briefings with Amazon Bedrock. | YouTube KR 인기 급상승 데이터를 시간 단위로 수집하고, 순위 변동과 카테고리 점유율을 시각화하며, Amazon Bedrock으로 LLM 브리핑을 생성합니다.
+Collect YouTube KR trending data hourly and explore it on the Trend Radar single-page UI — rank movement, AI-tagged card rows, a taste quiz, and LLM briefings with Amazon Bedrock. | YouTube KR 인기 급상승 데이터를 시간 단위로 수집하고, Trend Radar 단일 페이지 UI에서 순위 변동·AI 태깅 카드 행·취향 퀴즈를 탐색하며, Amazon Bedrock으로 LLM 브리핑을 생성합니다.
 
 ---
 
@@ -17,13 +17,15 @@ Collect YouTube KR trending data hourly, visualize rank movement and category sh
 
 ## Overview
 
-YouTube Trends is a capstone application that collects YouTube KR trending data every hour, shows rank movement and category-level flow, and generates natural-language briefings with Bedrock LLM. The backend is FastAPI + DynamoDB, the frontend is a React SPA, and AWS CDK deploys the CloudFront/ALB/Fargate architecture.
+YouTube Trends is a capstone application that collects YouTube KR trending data every hour and presents it on **Trend Radar**, a single-page feed with a hero card, AI-tagged card rows, a taste quiz, 10 color themes, and Bedrock LLM briefings. The backend is FastAPI + DynamoDB, the frontend is a React SPA, and AWS CDK deploys the CloudFront/ALB/Fargate architecture.
 
 ## Features
 
-- **Top-30 overall trends** — Show the overall trending Top-30 with rank, view count, and likes, including rank delta badges against the previous snapshot and NEW markers for first-time entries.
-- **Category trends** — Filter by 8 fixed categories (Music, Gaming, Entertainment, News & Politics, Sports, Film & Animation, Science & Technology, Comedy) with the same rank/delta view.
-- **Trend time-series charts** — Chart per-category shares and entered/exited flows over the last N hours (default 48h).
+- **Trend Radar home** — A single-page feed (`GET /api/home`, refreshed every 60 seconds): a hero card for the overall #1 video (chart-in tenure, NEW chip), rule-based insight chips (no LLM), and scroll-snap card rows — overall Top-10, fastest rising by views/hour, AI topic rows, age-group rows, and 8 fixed category rows (Music, Gaming, Entertainment, News & Politics, Sports, Film & Animation, Science & Technology, Comedy). Rank delta badges against the previous snapshot and NEW markers for first-time entries are kept on every card.
+- **AI tagging rows** — After each hourly collection, a single Bedrock call tags the latest overall snapshot with a fixed vocabulary (topics / age group / vibe). The tags feed the topic and age-group rows and the quiz scoring; if no Bedrock key is set, the home feed still works and tag-based rows are simply omitted.
+- **Taste quiz** — Three questions (mood / time / style) are scored deterministically against tags and category weights (`POST /api/quiz`, no LLM call), returning one of 8 fixed types plus a personalized Top-10 row inserted at the top of the home feed.
+- **10 color themes** — `[data-theme]` CSS variable sets (default `neon-hunter`), switchable from the top-bar theme modal and persisted in localStorage.
+- **Trend time-series charts** — A per-video rank/view chart in the detail modal (log/linear toggle) and a bottom panel charting per-category shares and entered/exited flows over the last 48 hours.
 - **LLM brief / trend report** — Generate a current-snapshot summary (`now`) or day-over-day comparison (`daily`) briefing and a 48-hour trend report with Bedrock (Claude, Bearer authentication). Results are cached per hour.
 
 ## Architecture
@@ -130,7 +132,7 @@ All secrets and settings are supplied through a single `.env` file. `deploy.sh` 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `YT_API_KEY` | YouTube Data API v3 key. Required — `deploy.sh` aborts immediately if empty | (none) |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (Bearer). Optional — if empty, only the LLM endpoints are disabled with 503 | (empty) |
+| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (Bearer). Optional — if empty, the LLM endpoints return 503 and AI tagging is skipped | (empty) |
 | `ORIGIN_VERIFY_TOKEN` | Fixed CloudFront-to-ALB verification header value. Pinning it is strongly recommended | (regenerated per synth if empty) |
 | `VPC_MODE` | `existing` (look up an existing VPC) or `new` (create a new VPC) | `existing` |
 | `VPC_NAME` | Name tag of the VPC to look up when `VPC_MODE=existing` | `cc-on-bedrock-vpc` |
@@ -157,7 +159,7 @@ Switch with `VPC_MODE` in `.env`.
 
 - This app calls Bedrock with a **Bearer token, not SigV4/IAM** (`backend/app/llm/bedrock.py`). The ECS task role is granted no Bedrock-related IAM policy at all.
 - **In accounts where an organization SCP denies `InvokeModel` in the Seoul region (`ap-northeast-2`)**, a key issued inside that SCP-bound organization/account cannot bypass it. Bearer authentication does not go through the IAM policy evaluation path, so the SCP cannot block it — but that does not mean Bedrock API key issuance is allowed in the SCP-bound account itself. In practice you must bring a **key issued in a separate account/organization without the SCP restriction**.
-- If the key is left empty, deployment proceeds normally and only the LLM endpoints (`POST /api/brief`, `POST /api/trends/report`) are disabled with 503 (`enabled: false`). The remaining features (Top-30, categories, charts) are unaffected.
+- If the key is left empty, deployment proceeds normally: the LLM endpoints (`POST /api/brief`, `POST /api/trends/report`) are disabled with 503 (`enabled: false`) and AI tagging is skipped (the home feed still works — tag-based rows are simply omitted). The remaining features (home feed, Top-10 rows, categories, charts, quiz) are unaffected.
 
 #### Key Rotation Procedure (common)
 
@@ -180,12 +182,12 @@ Switch with `VPC_MODE` in `.env`.
 
 ```text
 youtube-trends/
-  backend/           # FastAPI app (collector, store, derive, llm, api)
+  backend/           # FastAPI app (collector, store, derive, tagging, llm, api)
     app/             # Application source
-    tests/           # pytest suite (66 tests)
+    tests/           # pytest suite (92 tests)
     Dockerfile       # Multi-stage image (build context = repo root)
   frontend/          # React 18 + Vite + TypeScript SPA (recharts, react-markdown)
-    src/             # Tabs, components, API client
+    src/             # Single-page Trend Radar app (App.tsx, components, API client)
   infra/             # AWS CDK (Python) — YoutubeTrendsStack
   scripts/           # deploy.sh, smoke.sh
   docs/              # Documentation
@@ -194,7 +196,7 @@ youtube-trends/
 ## Testing
 
 ```bash
-# Backend: 66 tests
+# Backend: 92 tests
 cd backend && .venv/bin/pytest tests/ -q
 
 # Frontend gate: type check + build
@@ -213,6 +215,8 @@ The base path is `/api`. Every error response has the form `{"error": "<Korean m
 | 4 | `GET /api/trends/categories?hours=` | Per-category share and entered/exited time series. `hours` 2-96 (default 48, safety margin for the DynamoDB 1MB Query limit) | 200 | 400 out-of-range `hours` |
 | 5 | `POST /api/brief` `{scope, mode}` | LLM briefing. `mode` is `now`\|`daily` | 200 `{brief, cached}` | 400 invalid `scope`/`mode` · 409 no snapshot/baseline · 502 Bedrock upstream error · 503 key not configured |
 | 6 | `POST /api/trends/report` `{scope}` | 48-hour trend report | 200 `{report, cached}` | 400 invalid `scope` · 409 no snapshot · 502 Bedrock upstream error · 503 key not configured |
+| 7 | `GET /api/home` | Trend Radar home feed — hero, insight chips, and card rows composed from the latest snapshot (with AI tags when available) | 200 `{capturedAt, tagged, llmEnabled, insights, hero, rows}` | 409 no snapshot |
+| 8 | `POST /api/quiz` `{mood, time, style}` | Taste quiz — deterministic scoring, no LLM call | 200 `{type, items}` | 400 invalid body · 409 no snapshot |
 
 In addition, there are `GET /healthz` (ALB health check only; always 200 "ok" without touching external dependencies) and SPA static file serving (`GET /*`) for every request that matches none of the paths above.
 
@@ -221,8 +225,8 @@ In addition, there are `GET /healthz` (ALB health check only; always 200 "ok" wi
 | Code | Meaning | Where |
 |---|---|---|
 | 200 | Success | All endpoints |
-| 400 | Bad request (invalid `scope`/`mode`, query parameter validation failure) | 1, 3, 4, 5, 6 |
-| 409 | No data to show yet (no latest snapshot, no baseline for `daily` comparison) | 5, 6 |
+| 400 | Bad request (invalid `scope`/`mode`/body, query parameter validation failure) | 1, 3, 4, 5, 6, 8 |
+| 409 | No data to show yet (no latest snapshot, no baseline for `daily` comparison) | 5, 6, 7, 8 |
 | 502 | Bedrock response error (abnormal status code, parse failure) | 5, 6 |
 | 503 | LLM feature disabled (`AWS_BEARER_TOKEN_BEDROCK` not set) | 5, 6 |
 
@@ -263,13 +267,15 @@ No license has been declared for this project. Until a license is added, all rig
 
 ## 개요
 
-YouTube Trends는 YouTube KR 인기 급상승 데이터를 시간 단위로 수집하고, 순위 변동과 카테고리별 흐름을 보여주며, Bedrock LLM으로 자연어 브리핑을 생성하는 캡스톤 애플리케이션입니다. 백엔드는 FastAPI + DynamoDB, 프론트엔드는 React SPA이며, AWS CDK로 CloudFront/ALB/Fargate 구성을 배포합니다.
+YouTube Trends는 YouTube KR 인기 급상승 데이터를 시간 단위로 수집해 **Trend Radar** 단일 페이지 피드 — 히어로 카드, AI 태깅 카드 행, 취향 퀴즈, 10종 컬러 테마, Bedrock LLM 브리핑 — 로 보여주는 캡스톤 애플리케이션입니다. 백엔드는 FastAPI + DynamoDB, 프론트엔드는 React SPA이며, AWS CDK로 CloudFront/ALB/Fargate 구성을 배포합니다.
 
 ## 주요 기능
 
-- **Top-30 전체 트렌드** — 전체 인기 급상승 영상 Top-30을 순위·조회수·좋아요와 함께 보여주고, 직전 스냅샷 대비 순위 변동(델타 배지)과 신규 진입(NEW) 여부를 표시합니다.
-- **카테고리별 트렌드** — 음악/게임/엔터테인먼트/뉴스·정치/스포츠/영화·애니메이션/과학기술/코미디 8개 고정 카테고리로 필터링해 같은 방식의 순위·변동을 봅니다.
-- **트렌드 변화 시계열 차트** — 최근 N시간(기본 48h) 동안 카테고리별 점유율(shares)과 진입/이탈(entered/exited) 추이를 차트로 봅니다.
+- **Trend Radar 홈** — 단일 페이지 피드(`GET /api/home`, 60초 주기 갱신)입니다. 전체 1위 영상의 히어로 카드(차트인 시간·NEW 칩), 규칙 기반 인사이트 칩(LLM 미사용), 스크롤 스냅 카드 행 — 전체 Top-10, 시간당 조회수 급상승, AI 주제 행, 연령대 행, 8개 고정 카테고리(음악/게임/엔터테인먼트/뉴스·정치/스포츠/영화·애니메이션/과학기술/코미디) 행 — 으로 구성됩니다. 직전 스냅샷 대비 순위 변동(델타 배지)과 신규 진입(NEW) 표시는 모든 카드에 유지됩니다.
+- **AI 태깅 행** — 매시 수집 후 Bedrock 1회 호출로 최신 전체 스냅샷에 고정 어휘(topics/age/vibe) 태그를 붙입니다. 태그는 주제·연령대 행과 퀴즈 채점에 쓰이며, Bedrock 키가 없어도 홈 피드는 정상 동작하고 태그 기반 행만 생략됩니다.
+- **취향 퀴즈** — 3문항(기분/시간대/스타일)을 태그와 카테고리 가중치로 결정적으로 채점해(`POST /api/quiz`, LLM 미호출) 8가지 고정 유형 중 하나와 맞춤 Top-10 행을 반환하고, 홈 피드 상단에 행으로 삽입합니다.
+- **컬러 테마 10종** — `[data-theme]` CSS 변수 세트(기본 `neon-hunter`)를 톱바의 테마 모달에서 전환하며 localStorage에 저장됩니다.
+- **트렌드 시계열 차트** — 상세 모달의 영상별 순위·조회수 차트(로그/선형 토글)와, 최근 48시간 카테고리별 점유율(shares)·진입/이탈(entered/exited) 추이 하단 패널을 제공합니다.
 - **LLM 브리프 / 트렌드 리포트** — Bedrock(Claude, Bearer 인증)으로 현재 스냅샷 요약(`now`) 또는 전일 대비 비교(`daily`) 브리핑과 48시간 트렌드 리포트를 생성합니다. 결과는 시간 단위로 캐시됩니다.
 
 ## 아키텍처
@@ -376,7 +382,7 @@ npm run dev
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `YT_API_KEY` | YouTube Data API v3 키. 필수 — 비어 있으면 `deploy.sh`가 즉시 중단됩니다 | (없음) |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API 키(Bearer). 선택 — 비어 있으면 LLM 엔드포인트만 503으로 비활성화됩니다 | (빈 값) |
+| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API 키(Bearer). 선택 — 비어 있으면 LLM 엔드포인트가 503을 반환하고 AI 태깅을 건너뜁니다 | (빈 값) |
 | `ORIGIN_VERIFY_TOKEN` | CloudFront → ALB 검증 헤더 고정 값. 고정해 두는 것을 강력히 권장합니다 | (비어 있으면 synth마다 재생성) |
 | `VPC_MODE` | `existing`(기존 VPC 조회) 또는 `new`(신규 VPC 생성) | `existing` |
 | `VPC_NAME` | `VPC_MODE=existing`일 때 조회할 VPC의 Name 태그 | `cc-on-bedrock-vpc` |
@@ -403,7 +409,7 @@ npm run dev
 
 - 이 앱은 Bedrock을 **SigV4/IAM이 아니라 Bearer 토큰**으로 호출합니다(`backend/app/llm/bedrock.py`). ECS 태스크 역할에는 Bedrock 관련 IAM 정책을 전혀 부여하지 않습니다.
 - **조직 SCP가 서울 리전(`ap-northeast-2`)의 `InvokeModel`을 거부하는 계정**에서는, 그 SCP가 걸린 조직/계정 안에서 발급한 키로는 우회할 수 없습니다. Bearer 인증은 IAM 정책 평가 경로를 타지 않으므로 SCP도 이를 막지 못하지만, 그렇다고 SCP가 걸린 계정 자체에서 Bedrock API 키 발급이 허용되는 것은 아닙니다 — 실제로는 **SCP 제약이 없는 별도 계정/조직에서 발급한 키**를 가져와 써야 합니다.
-- 키를 비워 두면 배포는 정상적으로 진행되고, LLM 관련 엔드포인트(`POST /api/brief`, `POST /api/trends/report`)만 503(`enabled: false`)으로 비활성화됩니다. 나머지 기능(Top-30, 카테고리, 차트)은 영향받지 않습니다.
+- 키를 비워 두면 배포는 정상적으로 진행되고, LLM 관련 엔드포인트(`POST /api/brief`, `POST /api/trends/report`)가 503(`enabled: false`)으로 비활성화되며 AI 태깅도 건너뜁니다(홈 피드는 정상 동작하고 태그 기반 행만 생략됩니다). 나머지 기능(홈 피드, Top-10 행, 카테고리, 차트, 퀴즈)은 영향받지 않습니다.
 
 #### 키 회전 절차 (공통)
 
@@ -426,12 +432,12 @@ npm run dev
 
 ```text
 youtube-trends/
-  backend/           # FastAPI 앱 (collector, store, derive, llm, api)
+  backend/           # FastAPI 앱 (collector, store, derive, tagging, llm, api)
     app/             # 애플리케이션 소스
-    tests/           # pytest 스위트 (66개 테스트)
+    tests/           # pytest 스위트 (92개 테스트)
     Dockerfile       # 멀티스테이지 이미지 (빌드 컨텍스트 = 저장소 루트)
   frontend/          # React 18 + Vite + TypeScript SPA (recharts, react-markdown)
-    src/             # 탭, 컴포넌트, API 클라이언트
+    src/             # 단일 페이지 Trend Radar 앱 (App.tsx, 컴포넌트, API 클라이언트)
   infra/             # AWS CDK (Python) — YoutubeTrendsStack
   scripts/           # deploy.sh, smoke.sh
   docs/              # 문서
@@ -440,7 +446,7 @@ youtube-trends/
 ## 테스트
 
 ```bash
-# Backend: 66 tests
+# Backend: 92 tests
 cd backend && .venv/bin/pytest tests/ -q
 
 # Frontend gate: type check + build
@@ -459,6 +465,8 @@ cd frontend && npx tsc --noEmit && npm run build
 | 4 | `GET /api/trends/categories?hours=` | 카테고리별 점유율·진입/이탈 시계열. `hours` 2~96(기본 48, DynamoDB 1MB Query 한도 안전 마진) | 200 | 400 범위 밖 `hours` |
 | 5 | `POST /api/brief` `{scope, mode}` | LLM 브리핑. `mode`는 `now`\|`daily` | 200 `{brief, cached}` | 400 잘못된 `scope`/`mode` · 409 스냅샷/기준선 없음 · 502 Bedrock 업스트림 오류 · 503 키 미설정 |
 | 6 | `POST /api/trends/report` `{scope}` | 48시간 트렌드 리포트 | 200 `{report, cached}` | 400 잘못된 `scope` · 409 스냅샷 없음 · 502 Bedrock 업스트림 오류 · 503 키 미설정 |
+| 7 | `GET /api/home` | Trend Radar 홈 피드 — 최신 스냅샷(가능하면 AI 태그 병합)으로 조합한 히어로·인사이트 칩·카드 행 | 200 `{capturedAt, tagged, llmEnabled, insights, hero, rows}` | 409 스냅샷 없음 |
+| 8 | `POST /api/quiz` `{mood, time, style}` | 취향 퀴즈 — 결정적 채점, LLM 미호출 | 200 `{type, items}` | 400 잘못된 본문 · 409 스냅샷 없음 |
 
 이 외에 `GET /healthz`(ALB 헬스체크 전용, 외부 의존성 접근 없이 항상 200 "ok")와, 위 경로에 매칭되지 않는 모든 요청에 대한 SPA 정적 파일 서빙(`GET /*`)이 있습니다.
 
@@ -467,8 +475,8 @@ cd frontend && npx tsc --noEmit && npm run build
 | 코드 | 의미 | 발생 위치 |
 |---|---|---|
 | 200 | 정상 처리 | 모든 엔드포인트 |
-| 400 | 잘못된 요청(유효하지 않은 `scope`/`mode`, 쿼리 파라미터 검증 실패) | 1, 3, 4, 5, 6 |
-| 409 | 표시할 데이터가 아직 없음(최신 스냅샷 없음, `daily` 비교용 기준선 없음) | 5, 6 |
+| 400 | 잘못된 요청(유효하지 않은 `scope`/`mode`/본문, 쿼리 파라미터 검증 실패) | 1, 3, 4, 5, 6, 8 |
+| 409 | 표시할 데이터가 아직 없음(최신 스냅샷 없음, `daily` 비교용 기준선 없음) | 5, 6, 7, 8 |
 | 502 | Bedrock 응답 오류(비정상 상태 코드, 파싱 실패) | 5, 6 |
 | 503 | LLM 기능 비활성(`AWS_BEARER_TOKEN_BEDROCK` 미설정) | 5, 6 |
 

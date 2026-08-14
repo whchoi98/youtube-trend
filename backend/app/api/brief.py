@@ -60,7 +60,10 @@ def brief(req: BriefReq, store=Depends(get_store), llm=Depends(get_llm)):
 
     baseline = None
     if req.mode == "daily":
-        baseline = store.baseline_snapshot(req.scope, now, keys.DAILY_OFFSETS)
+        # exclude_bucket: 수집이 오래 멈춰 최신 스냅샷이 24시간 이상 묵으면
+        # 자기 자신과 비교해 "변화 없음" 브리핑이 조작된다 — 자기 버킷 제외
+        baseline = store.baseline_snapshot(req.scope, now, keys.DAILY_OFFSETS,
+                                           exclude_bucket=snap["bucket"])
         if baseline is None:
             return JSONResponse({"error": ERR["no_baseline"], "baseline": None},
                                 status_code=409)

@@ -2,15 +2,20 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouTube 트렌드</title>
+    <title>Trend Radar — YouTube KR 트렌드</title>
     <script>
+      // 첫 페인트 전 테마 적용. 유효 id 목록은 src/themes.ts와 동기 유지.
       try {
-        var t = localStorage.getItem('yt-theme') ||
-          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var VALID = ['neon-hunter','dawn-live','retro-arcade','deep-ocean','sunset-city',
+                     'forest','monochrome','cotton-candy','cyberpunk','golden-hour'];
+        var t = localStorage.getItem('yt-theme');
+        if (t === 'dark') t = 'neon-hunter';   // 구버전 값 마이그레이션
+        if (t === 'light') t = 'cotton-candy';
+        if (VALID.indexOf(t) < 0) t = 'neon-hunter';
         document.documentElement.dataset.theme = t;
-      } catch (e) { document.documentElement.dataset.theme = 'light'; }
+      } catch (e) { document.documentElement.dataset.theme = 'neon-hunter'; }
     </script>
   </head>
   <body>

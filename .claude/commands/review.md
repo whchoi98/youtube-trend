@@ -17,7 +17,7 @@ allowed-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(git sta
 
 변경 파일마다 code-review 스킬 기준을 적용한다. 특히:
 
-- **두 검증 표면 구분**: `frontend/`(tsc)·`infra/`(synth)는 타입/문법 검사만 받는다 — 런타임 로직을 정독한다. `backend/`는 pytest 66개가 있으므로 테스트가 못 잡는 계약·경계·외부 호출 오류 경로에 집중한다
+- **두 검증 표면 구분**: `frontend/`(tsc)·`infra/`(synth)는 타입/문법 검사만 받는다 — 런타임 로직을 정독한다. `backend/`는 pytest 92개가 있으므로 테스트가 못 잡는 계약·경계·외부 호출 오류 경로에 집중한다
 - **API 오류 계약 회귀**: 모든 오류 응답은 `{"error": "<한국어>"}` + 4xx/5xx — backend 변경마다 확인
 - infra 변경이면 construct 논리 ID 변경(리소스 교체) 여부 확인
 - 시크릿 값 유입 여부 확인 (발견 시 무조건 CRITICAL, 값은 출력하지 않는다)
