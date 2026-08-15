@@ -2,14 +2,17 @@
 
 ## Role
 
-React + Vite + TypeScript 단일 페이지 앱(Trend Radar)이다. 넷플릭스형 홈 한 화면에서 백엔드 API를 소비한다: 히어로(전체 1위) → 인사이트 칩 → 가로 스트립 행들(top10/accel/topic/age/category/퀴즈 맞춤) → 하단 패널(카테고리 점유율 추이, AI 브리핑). 60초 폴링으로 `/api/home`을 자동 갱신한다.
+React + Vite + TypeScript 단일 페이지 앱(로고: YOUTUBE TREND MONITOR)이다. 넷플릭스형 홈 한 화면에서 백엔드 API를 소비한다: 히어로(전체 1위, 타일 선택 시 그 콘텐츠의 빌보드로 전환) → 선택 콘텐츠 추이 → 인사이트 칩 → 가로 스트립 행들(top10/accel/topic/age/category/퀴즈 맞춤) → 하단 패널(영상 시계열, 카테고리 점유율 추이, AI 브리핑). 60초 폴링으로 `/api/home`을 자동 갱신한다.
 
-- `src/App.tsx` — 톱바·홈 로드(60초 폴링 + 세대 가드)·모달 상태·하단 패널 배치
-- `src/components/Hero.tsx` — 1위 히어로 (maxres 배경, onError 폴백, 차트인 시간)
-- `src/components/Row.tsx` — 스트립 행 + Tile/TopTile(큰 순위 숫자)·배지·태그 칩
+- `src/App.tsx` — 톱바·홈 로드(60초 폴링 + 세대 가드)·선택 콘텐츠 상태·모달 상태·패널 배치
+- `src/components/Hero.tsx` — 빌보드: 기본은 전체 1위, 타일 선택 시 해당 콘텐츠의 제목·카테고리 칩·간단한 소개(description)·YouTube 링크로 전환 (maxres 배경 + onError 폴백)
+- `src/components/Row.tsx` — 스트립 행 + Tile(좌상단 순위 칩, 우상단 ▲/▼/NEW/– 배지)·TopTile(큰 순위 숫자)·태그 칩. 타일 클릭은 히어로 선택으로 이어진다
+- `src/components/SelectedTrend.tsx` — 선택 콘텐츠의 시계열 차트 (히어로 아래 패널)
+- `src/components/VideoSeriesPanel.tsx` — 상단 셀렉터로 전체 Top30 중 영상을 골라 추이를 보는 하단 패널 (구 추이 분석 탭 복원)
+- `src/components/HistoryCharts.tsx` — 순위/조회수 차트 쌍 + 로그/선형 토글 (공용)
+- `src/useVideoHistory.ts` — 시계열 로드 훅 (세대 가드 포함, 위 두 곳이 공유)
 - `src/components/QuizModal.tsx` — 취향 퀴즈 3문항 → `/api/quiz` → 맞춤 행 추가
 - `src/components/ThemeModal.tsx` — 테마 10종 선택 (`src/themes.ts`와 styles.css 동기)
-- `src/components/DetailModal.tsx` — 타일 클릭 상세: 영상 시계열 차트 + YouTube 이동
 - `src/components/TrendsPanel.tsx` — 점유율 스택 AreaChart + 진입/이탈 BarChart
 - `src/components/BriefPanel.tsx` — LLM 브리핑/리포트 (react-markdown 렌더)
 - `src/api.ts` — 단일 API 클라이언트. 모든 백엔드 호출은 이 파일을 거친다.

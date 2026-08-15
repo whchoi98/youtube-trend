@@ -3,13 +3,19 @@ import type { HomeCard, HomeRow } from '../types'
 import { formatCount } from '../format'
 
 /** 배지 규약: baseline null=비교 불가(배지 없음), prevRank null=NEW,
- *  delta 양수=상승 ▲, 음수=하락 ▼, 0=배지 없음. null vs 0 혼용 금지. */
+ *  delta 양수=상승 ▲, 음수=하락 ▼, 0=유지 –. null vs 0 혼용 금지. */
 function Badge({ card }: { card: HomeCard }) {
   if (card.baseline === null) return null
   if (card.prevRank === null) return <span className="badge new">NEW</span>
   if (card.delta !== null && card.delta > 0) return <span className="badge up">▲{card.delta}</span>
   if (card.delta !== null && card.delta < 0) return <span className="badge down">▼{-card.delta}</span>
+  if (card.delta === 0) return <span className="badge same">–</span>
   return null
+}
+
+/** 좌측 상단 순위 칩 — 분야 행은 분야 내 순위, 나머지 행은 전체 순위다. */
+function RankChip({ rank }: { rank: number }) {
+  return <span className={rank <= 3 ? 'tile-rank top3' : 'tile-rank'}>{rank}</span>
 }
 
 function Velocity({ card }: { card: HomeCard }) {
@@ -42,6 +48,7 @@ function Tile({ card, onOpen }: { card: HomeCard; onOpen: (c: HomeCard) => void 
   return (
     <button type="button" className="tile" onClick={() => onOpen(card)}>
       <Thumb card={card} />
+      <RankChip rank={card.rank} />
       <Badge card={card} />
       <span className="info">
         <span className="t">{card.title}</span>

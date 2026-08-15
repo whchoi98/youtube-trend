@@ -58,3 +58,19 @@ def test_non_numeric_stats_become_zero():
     payload["items"][0]["statistics"]["viewCount"] = "not-a-number"
     cards = make_client(lambda r: httpx.Response(200, json=payload)).most_popular(None, 30)
     assert cards[0]["views"] == 0
+
+
+def test_most_popular_truncates_description():
+    def handler(req):
+        return httpx.Response(200, json={"items": [{
+            "id": "v1",
+            "snippet": {"title": "t", "channelTitle": "c", "categoryId": "10",
+                        "description": "첫 줄\n둘째 줄  " + "가" * 300},
+            "statistics": {"viewCount": "1", "likeCount": "1"},
+        }]})
+
+    yt = YouTubeClient(api_key="k", client=httpx.Client(
+        transport=httpx.MockTransport(handler)), category_names={"10": "음악"})
+    c = yt.most_popular(None, 1)[0]
+    assert c["description"].startswith("첫 줄 둘째 줄 가")
+    assert len(c["description"]) == 200

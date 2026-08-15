@@ -12,6 +12,9 @@ from app.categories import CATEGORY_NAMES
 log = logging.getLogger(__name__)
 BASE = "https://www.googleapis.com/youtube/v3"
 TIMEOUT = 10.0
+# 카드에 싣는 소개문 길이 상한 — 홈 히어로의 '간단한 소개'용이며, 스냅샷
+# items(JSON 문자열) 크기가 설명문 길이에 끌려가지 않도록 자른다.
+DESCRIPTION_MAX = 200
 
 
 def _stat_int(v) -> int:
@@ -70,5 +73,8 @@ class YouTubeClient:
                 "category": self.category_names.get(cat_id, "기타"), "categoryId": cat_id,
                 "thumbnail": sn.get("thumbnails", {}).get("high", {}).get("url", ""),
                 "publishedAt": sn.get("publishedAt", ""),
+                # 개행·공백 정리 후 상한 — 히어로 소개문 용도라 앞부분만 필요
+                "description": " ".join(
+                    str(sn.get("description") or "").split())[:DESCRIPTION_MAX],
             })
         return cards

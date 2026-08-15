@@ -2,9 +2,17 @@ export interface Card {
   rank: number; videoId: string; title: string; channel: string;
   views: number; likes: number; category: string; categoryId: string;
   thumbnail: string; publishedAt: string;
+  /** 간단한 소개(수집 시 200자 절단). 도입 이전 스냅샷에는 없다. */
+  description?: string;
   baseline: string | null; prevRank: number | null;
   delta: number | null; viewsPerHour: number | null;
 }
+
+/** 비동기 로드 공용 상태 — 신규 컴포넌트/훅은 이 타입을 재사용한다. */
+export type Loadable<T> =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; data: T }
 export interface Category { id: string; name: string }
 export interface HistoryPoint { ts: string; rank: number | null; views: number }
 export interface TrendBucket { ts: string; shares: Record<string, number>; entered: number; exited: number }

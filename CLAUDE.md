@@ -8,7 +8,7 @@ YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비
 
 ## Tech Stack
 
-- Backend: Python 3.12 + FastAPI (`backend/` — pytest 92개, venv는 `backend/.venv`)
+- Backend: Python 3.12 + FastAPI (`backend/` — pytest 93개, venv는 `backend/.venv`)
 - Frontend: React 18 + Vite + TypeScript (`frontend/` — recharts, react-markdown)
 - IaC: AWS CDK Python (`infra/` — 스택 `YoutubeTrendsStack`, VPC existing/new 2모드)
 - Container: Docker 멀티스테이지 (`backend/Dockerfile`, 빌드 컨텍스트 = 저장소 루트)
@@ -28,10 +28,11 @@ backend/            - FastAPI 앱 + 테스트
   app/aggregate.py  - 카테고리 집계
   app/home.py       - 홈 행 구성·인사이트·퀴즈 추천 (순수 로직)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
-  tests/            - pytest 92개 (moto 기반)
-frontend/           - React SPA (Trend Radar 단일 페이지)
-  src/components/   - Hero, Row(타일/스트립), QuizModal, ThemeModal, DetailModal,
-                      TrendsPanel, BriefPanel, InsightChips, Modal
+  tests/            - pytest 93개 (moto 기반)
+frontend/           - React SPA (단일 페이지 홈 — 로고 YOUTUBE TREND MONITOR)
+  src/components/   - Hero(선택 빌보드), Row(타일/순위 칩/배지), QuizModal, ThemeModal,
+                      SelectedTrend, VideoSeriesPanel, HistoryCharts, TrendsPanel,
+                      BriefPanel, InsightChips, Modal
   src/api.ts        - 단일 API 클라이언트
   src/themes.ts     - 테마 10종 정의 (CSS 변수 세트는 styles.css와 동기)
 infra/              - CDK Python (app.py, stacks/network.py, stacks/service.py)
@@ -41,7 +42,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## Key Commands
 
-- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (92개)
+- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (93개)
 - 프론트 게이트: `cd frontend && npx tsc --noEmit && npm run build`
 - 배포: `./scripts/deploy.sh`
 - 스모크: `./scripts/smoke.sh <SiteUrl>`

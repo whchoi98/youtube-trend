@@ -22,8 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add ten selectable UI themes as CSS variable sets with a theme picker modal and localStorage persistence (legacy light/dark values migrated)
 - Add video detail modal preserving per-video rank/views history charts; tiles show NEW/rank-delta badges and views-per-hour velocity
 
+- Add video time-series panel with a top selector, restoring the old Trends-tab drill-down flow
+- Add Netflix-style content selection: clicking any tile swaps the hero into a billboard (title, category chip, short description, YouTube link) with the video's trend charts right below
+- Add per-tile rank chips (top-left) and an unchanged "-" state to the top-right delta badges; collect a 200-character description per video for the hero synopsis
+
 ### Changed
-- Replace the three-tab layout with the single-page Trend Radar; category share and LLM briefing/report panels moved to the bottom of the home page
+- Replace the three-tab layout with the single-page home; category share and LLM briefing/report panels moved to the bottom of the home page
+- Rename the top logo/title to YOUTUBE TREND MONITOR; the video detail modal is superseded by hero selection
 
 ## [0.1.0] - 2026-08-04
 
@@ -66,8 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS 변수 세트 기반 UI 테마 10종과 테마 선택 모달, localStorage 유지 추가(기존 light/dark 값 마이그레이션)
 - 영상 상세 모달 추가(영상별 순위/조회수 히스토리 차트 보존), 타일에 NEW/순위 델타 배지와 시간당 조회 속도 표시
 
+- 상단 셀렉터로 영상을 골라 추이를 보는 영상 시계열 패널 추가(구 추이 분석 탭 방식 복원)
+- 넷플릭스식 콘텐츠 선택 추가: 타일 클릭 시 히어로가 해당 콘텐츠의 빌보드(제목·카테고리 칩·간단한 소개·YouTube 링크)로 전환되고 바로 아래에 추이 차트 표시
+- 타일 좌측 상단 순위 칩과 우측 상단 델타 배지의 유지("-") 상태 추가, 히어로 소개문용 영상 설명(200자) 수집 추가
+
 ### Changed
-- 3탭 레이아웃을 단일 페이지 Trend Radar로 교체, 카테고리 점유율·LLM 브리핑/리포트 패널은 홈 하단으로 이동
+- 3탭 레이아웃을 단일 페이지 홈으로 교체, 카테고리 점유율·LLM 브리핑/리포트 패널은 홈 하단으로 이동
+- 상단 로고/타이틀을 YOUTUBE TREND MONITOR로 변경, 영상 상세 모달은 히어로 선택 방식으로 대체
 
 ## [0.1.0] - 2026-08-04
 

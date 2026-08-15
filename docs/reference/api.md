@@ -25,6 +25,7 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - Dependencies resolve via `app.state`, guarded in lifespan so injected test doubles are never overwritten by production builders.
 - `GET /api/trending` returns a bare array; snapshot-level attributes (such as `degraded`) intentionally stay out of the card contract.
 - Missing data is not an error: no snapshot yields `[]`, missing baseline yields cards with null derived fields.
+- Card objects carry an optional `description` (collector-truncated to 200 chars, whitespace-collapsed) — the home hero uses it as a short synopsis. Snapshots stored before the field was introduced lack it, so `/api/trending` cards and `/api/home` items/hero may omit the field; clients treat it as optional.
 - `hours` bounds are enforced with `Query(ge=..., le=...)` so out-of-range input hits the 400 contract, not a 422.
 - `GET /api/home` and `POST /api/quiz` deviate from the empty-result convention: without an ALL snapshot they return 409 `{"error": "표시할 목록이 아직 없습니다"}` instead of an empty body.
 - The quiz is deterministic and LLM-free: vibe tag match +3, `MOOD_CATS`/`STYLE_CATS` category weights, rank tiebreak `(31-rank)/30`; answers are validated in-router against the fixed vocabularies and reuse the same 400 message as the global validation remap.
@@ -68,6 +69,7 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - 의존성은 `app.state`로 해석하고 lifespan에서 개별 가드한다 — 테스트가 주입한 더블을 프로덕션 빌더가 덮어쓰지 않는다.
 - `GET /api/trending`은 순수 배열을 반환한다. 스냅샷 속성(`degraded` 등)은 의도적으로 카드 계약에서 제외한다.
 - 데이터 부재는 오류가 아니다: 스냅샷 없음 → `[]`, 기준 스냅샷 없음 → 파생 필드 null 카드.
+- 카드 객체는 선택적 `description` 필드(수집기가 공백 정리 후 200자로 절단)를 싣는다 — 홈 히어로가 간단한 소개문으로 쓴다. 도입 이전에 저장된 스냅샷에는 없으므로 `/api/trending` 카드와 `/api/home`의 items/hero에서 빠질 수 있고, 클라이언트는 optional로 취급한다.
 - `hours` 범위는 `Query(ge=..., le=...)`로 강제한다 — 범위 밖 입력은 422가 아니라 400 계약에 걸린다.
 - `GET /api/home`·`POST /api/quiz`는 빈 응답 규칙에서 벗어난다: ALL 스냅샷이 없으면 빈 본문 대신 409 `{"error": "표시할 목록이 아직 없습니다"}`를 반환한다.
 - 퀴즈 추천은 결정적이며 LLM을 호출하지 않는다: 태그 vibe 일치 +3, `MOOD_CATS`/`STYLE_CATS` 분야 가중치, 순위 타이브레이크 `(31-rank)/30`. 답변은 라우터에서 고정 어휘로 검증하며 전역 검증 재매핑과 동일한 400 메시지를 쓴다.
@@ -89,4 +91,4 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - 관련 런북: 아직 없음
 - 관련 레이어: [data.md](data.md), [agent-llm.md](agent-llm.md), [frontend.md](frontend.md)
 
-Last updated: 2026-08-14
+Last updated: 2026-08-15

@@ -35,7 +35,7 @@ Adopt Option 2. The frontend becomes a single-page Trend Radar (hero, insight ch
 ## Consequences
 
 ### Positive
-- Home renders from one request; all composition logic is unit-tested Python (92 tests total).
+- Home renders from one request; all composition logic is unit-tested Python (93 tests total).
 - LLM tagging cost is bounded to at most one Converse call per hour regardless of viewers.
 - Existing endpoints keep their contracts; the old tabs' features survive as bottom panels and a detail modal.
 
@@ -79,7 +79,7 @@ Adopt Option 2. The frontend becomes a single-page Trend Radar (hero, insight ch
 ## 영향
 
 ### 긍정적
-- 홈이 1요청으로 렌더되고 조합 로직 전부가 단위 테스트된 파이썬이다(총 92개).
+- 홈이 1요청으로 렌더되고 조합 로직 전부가 단위 테스트된 파이썬이다(총 93개).
 - LLM 태깅 비용이 조회자 수와 무관하게 시간당 최대 1콜로 상한된다.
 - 기존 엔드포인트 계약 불변. 구 탭 기능은 하단 패널과 상세 모달로 생존.
 

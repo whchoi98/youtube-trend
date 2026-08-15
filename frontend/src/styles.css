@@ -147,6 +147,19 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--new); color: var(--on-accent);
   padding: 2px 8px; border-radius: 5px; font-size: 12px;
 }
+.hero-cat {
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+  color: var(--text); backdrop-filter: blur(4px);
+  padding: 2px 8px; border-radius: 5px; font-size: 12px; font-weight: 600;
+}
+.hero-desc {
+  margin-top: 10px; max-width: 560px;
+  font-size: 14px; line-height: 1.55; opacity: 0.9;
+  text-shadow: 0 1px 8px var(--hero-shadow);
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
 .hero-title {
   font-size: clamp(22px, 3.4vw, 40px); font-weight: 800; line-height: 1.2;
   text-shadow: 0 2px 16px var(--hero-shadow);
@@ -172,6 +185,9 @@ button { font-family: inherit; cursor: pointer; }
   backdrop-filter: blur(6px);
 }
 .btn-quiz:hover { border-color: var(--accent); }
+
+/* 선택한 콘텐츠 추이 — 히어로 바로 아래에 붙는 패널 */
+.hero-trend { margin: 14px 4vw 4px; }
 
 /* ---------- 인사이트 칩 ---------- */
 .insights {
@@ -252,6 +268,18 @@ button { font-family: inherit; cursor: pointer; }
 .badge.up { background: var(--up); color: var(--on-accent); }
 .badge.down { background: var(--down); color: var(--on-down); }
 .badge.new { background: var(--new); color: var(--on-accent); }
+/* 유지(변동 0) — 썸네일 위에 놓이므로 테마 무관 반투명 다크 칩 */
+.badge.same { background: rgba(0, 0, 0, 0.55); color: #ffffff; }
+
+/* 좌측 상단 순위 칩 — 배지(우측 상단)와 짝을 이룬다 */
+.tile-rank {
+  position: absolute; top: 6px; left: 6px;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.65); color: #ffffff;
+  font-size: 12px; font-weight: 800;
+}
+.tile-rank.top3 { background: var(--accent); color: var(--on-cta); }
 
 /* TOP10: 큰 순위 숫자 겹침 */
 .tile.top {
@@ -427,6 +455,15 @@ button { font-family: inherit; cursor: pointer; }
 .theme-card.sel { border-color: var(--accent); }
 .sw { display: flex; gap: 3px; }
 .sw i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+
+/* 영상 시계열 패널 */
+.video-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.video-controls select {
+  flex: 1; min-width: 220px; max-width: 560px;
+  font: inherit; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+  background: var(--bg2); color: var(--text);
+}
 
 /* 영상 상세 모달 */
 .detail { display: flex; flex-direction: column; gap: 12px; }

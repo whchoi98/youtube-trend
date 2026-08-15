@@ -7,10 +7,11 @@ import { Hero } from './components/Hero'
 import { InsightChips } from './components/InsightChips'
 import { Row } from './components/Row'
 import { TrendsPanel } from './components/TrendsPanel'
+import { VideoSeriesPanel } from './components/VideoSeriesPanel'
 import { BriefPanel } from './components/BriefPanel'
 import { QuizModal } from './components/QuizModal'
 import { ThemeModal } from './components/ThemeModal'
-import { DetailModal } from './components/DetailModal'
+import { SelectedTrend } from './components/SelectedTrend'
 
 type HomeState =
   | { status: 'loading' }
@@ -25,7 +26,8 @@ export default function App() {
   const [theme, setThemeState] = useState<string>(() => getTheme())
   const [showQuiz, setShowQuiz] = useState(false)
   const [showTheme, setShowTheme] = useState(false)
-  const [detail, setDetail] = useState<HomeCard | null>(null)
+  // 타일에서 선택한 콘텐츠 — 히어로가 넷플릭스 빌보드처럼 이 콘텐츠로 바뀐다
+  const [selected, setSelected] = useState<HomeCard | null>(null)
   // 하단 패널(점유율/브리핑)은 수동 새로고침 때만 remount로 재조회한다
   const [panelKey, setPanelKey] = useState(0)
 
@@ -65,10 +67,16 @@ export default function App() {
     setThemeState(id)
   }
 
+  const selectCard = (card: HomeCard) => {
+    setSelected(card)
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
+  }
+
   return (
     <div className="app">
       <header className="topbar">
-        <div className="logo">TREND RADAR</div>
+        <div className="logo">YOUTUBE TREND MONITOR</div>
         {home.status === 'ready' && (
           <span className="last-at">수집 {formatClockKst(home.data.capturedAt)}</span>
         )}
@@ -88,17 +96,28 @@ export default function App() {
 
       {home.status === 'ready' && (
         <>
-          <Hero hero={home.data.hero} onQuiz={() => setShowQuiz(true)} />
+          <Hero
+            hero={home.data.hero}
+            selected={selected}
+            onQuiz={() => setShowQuiz(true)}
+            onClear={() => setSelected(null)}
+          />
+          {selected && (
+            <section className="panel hero-trend">
+              <h2>선택한 콘텐츠 추이</h2>
+              <SelectedTrend card={selected} />
+            </section>
+          )}
           <InsightChips items={home.data.insights} />
 
           <main className="rows">
-            {quizRow && <Row row={quizRow} hint="퀴즈 맞춤" onTile={setDetail} />}
+            {quizRow && <Row row={quizRow} hint="퀴즈 맞춤" onTile={selectCard} />}
             {home.data.rows.map((row) => (
               <Row
                 key={`${row.kind}:${row.title}`}
                 row={row}
                 hint={row.kind === 'topic' || row.kind === 'age' ? 'AI 태깅' : undefined}
-                onTile={setDetail}
+                onTile={selectCard}
               />
             ))}
             {!home.data.tagged && home.data.llmEnabled && (
@@ -107,6 +126,10 @@ export default function App() {
           </main>
 
           <div className="bottom">
+            <section className="panel">
+              <h2>영상 시계열</h2>
+              <VideoSeriesPanel key={`series-${panelKey}`} />
+            </section>
             <section className="panel">
               <h2>카테고리 점유율 추이</h2>
               <TrendsPanel key={`trends-${panelKey}`} />
@@ -125,7 +148,6 @@ export default function App() {
       {showTheme && (
         <ThemeModal current={theme} onSelect={selectTheme} onClose={() => setShowTheme(false)} />
       )}
-      {detail && <DetailModal card={detail} onClose={() => setDetail(null)} />}
     </div>
   )
 }
