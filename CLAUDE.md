@@ -29,7 +29,8 @@ backend/            - FastAPI 앱 + 테스트
   app/home.py       - 홈 행 구성·인사이트·퀴즈 추천 (순수 로직)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
   tests/            - pytest 93개 (moto 기반)
-frontend/           - React SPA (단일 페이지 홈 — 로고 YOUTUBE TREND MONITOR)
+frontend/           - React SPA (로고 YOUTUBE TREND MONITOR — 상단 메뉴 3화면:
+                      홈 / 시계열 추이 / 점유율·리포트)
   src/components/   - Hero(선택 빌보드), Row(타일/순위 칩/배지), QuizModal, ThemeModal,
                       SelectedTrend, VideoSeriesPanel, HistoryCharts, TrendsPanel,
                       BriefPanel, InsightChips, Modal

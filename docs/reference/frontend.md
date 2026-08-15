@@ -7,12 +7,12 @@
 ## English
 
 ### 1. Overview
-React 18 + Vite + TypeScript SPA — a single-page home with no router or tabs (logo and page title are now "YOUTUBE TREND MONITOR", renamed from TREND RADAR; the layout concept is unchanged): top bar (logo, capture time in KST, refresh, theme button), hero billboard (overall #1 by default, or the tile-selected card), a selected-content trend panel, insight chips, horizontal strip rows (top10 / accel / topic / age / category, plus a client-inserted quiz row), and three bottom panels (video series, category share trends, LLM brief). It consumes the backend `/api/*` contract only; the gate is `npx tsc --noEmit && npm run build` (no test runner).
+React 18 + Vite + TypeScript SPA — no router (logo and page title are now "YOUTUBE TREND MONITOR", renamed from TREND RADAR; the layout concept is unchanged): the top bar (logo, top menu, capture time in KST, refresh, theme button) carries a tab-style top menu that switches three views via a single `view` state: "홈" (hero billboard — overall #1 by default or the tile-selected card — plus selected-content trend panel, insight chips, and horizontal strip rows top10 / accel / topic / age / category with a client-inserted quiz row), "시계열 추이" (video series panel), and "점유율 · 리포트" (category share trends plus LLM brief). It consumes the backend `/api/*` contract only; the gate is `npx tsc --noEmit && npm run build` (no test runner).
 
 ### 2. Components
 | Component | Path | Purpose |
 |---|---|---|
-| App shell | `frontend/src/App.tsx` | Top bar, `/api/home` load with 60-second silent polling plus generation guard, `selected` card state (tile click swaps the hero billboard and scrolls to top), modal state, `panelKey` remount for the bottom panels |
+| App shell | `frontend/src/App.tsx` | Top bar with the `.nav-tabs` top menu (`VIEWS`/`view` state, `role="tablist"`, no router; switching scrolls to top), `/api/home` load with 60-second silent polling plus generation guard, `selected` card state (tile click swaps the hero billboard and scrolls to top), modal state, `panelKey` remount for the sub-view panels |
 | API client | `frontend/src/api.ts` | `fetchJson`/`postJson` plus `ApiError` carrying `status` and the `{error}` body from the backend contract |
 | Hero | `frontend/src/components/Hero.tsx` | Netflix-style billboard — overall #1 by default; a tile-selected card swaps in its title, category chip (`.hero-cat`), short `description` synopsis (`.hero-desc`), YouTube link, and a "✕ 1위 화면으로" clear button; maxres background `img` with per-videoId `onError` fallback, chart-in tenure hours, NEW chip, watch / quiz CTAs |
 | Insight chips | `frontend/src/components/InsightChips.tsx` | Rule-based insight strings from `/api/home` (no LLM) |
@@ -21,7 +21,7 @@ React 18 + Vite + TypeScript SPA — a single-page home with no router or tabs (
 | Theme modal | `frontend/src/components/ThemeModal.tsx` | 10 theme swatches from `src/themes.ts` |
 | Selected trend | `frontend/src/components/SelectedTrend.tsx` | "선택한 콘텐츠 추이" panel right under the hero — rank/views charts for the selected card; empty history shows a notice (only videos that entered the overall Top 30 are recorded) |
 | History charts | `frontend/src/components/HistoryCharts.tsx` | Shared rank + views `LineChart` pair with a log/linear toggle — rendered by `SelectedTrend` and `VideoSeriesPanel` (replaces the deleted `DetailModal.tsx`) |
-| Video series panel | `frontend/src/components/VideoSeriesPanel.tsx` | Bottom "영상 시계열" panel — video selector over `/api/trending?scope=all` plus history charts (`hours=168`); restores the old Trends-tab flow |
+| Video series panel | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" view panel — video selector over `/api/trending?scope=all` plus history charts (`hours=168`); restores the old Trends-tab flow |
 | History hook | `frontend/src/useVideoHistory.ts` | Generation-guarded `/api/videos/{id}/history?hours=168` fetch shared by `SelectedTrend` and `VideoSeriesPanel` |
 | Trends panel | `frontend/src/components/TrendsPanel.tsx` | Category share stacked `AreaChart` plus entered/exited `BarChart` (`hours=48`) |
 | Brief panel | `frontend/src/components/BriefPanel.tsx` | LLM brief/report, react-markdown render (logic unchanged from before the redesign) |
@@ -32,20 +32,20 @@ React 18 + Vite + TypeScript SPA — a single-page home with no router or tabs (
 | Chart colors | `frontend/src/chartColors.ts` | Theme-independent fixed 8-color palette (slot-bound) — recharts does not reliably apply CSS `var()` to SVG fill/stroke |
 
 ### 3. Key Decisions
-- Single page, no router: every section is composed from one `GET /api/home` response; the quiz row is the only client-made row (`kind='quiz'`).
+- No router: the tab-style top menu (`.nav-tabs`/`.nav-tab.active` accent underline, `role="tablist"`) switches the three views through the single `VIEWS`/`view` state in `App.tsx`, scrolling to top on every switch; sub views render inside a `.page` container (class renamed from `.bottom`). The home view is composed from one `GET /api/home` response; the quiz row is the only client-made row (`kind='quiz'`).
 - Tile clicks select content instead of opening a modal (`DetailModal.tsx` was deleted): `App.tsx` keeps a `selected` state, the hero becomes a Netflix-style billboard for the selected card, the page scrolls to top, and the "선택한 콘텐츠 추이" panel (`SelectedTrend`) appears right under the hero; "✕ 1위 화면으로" clears the selection back to the overall #1.
-- `/api/home` is polled every 60 seconds in silent mode. A generation token (a sequence ref captured per request) discards late responses; a failed silent poll keeps the current screen instead of showing an error. This generation-token race guard must be kept on any new async-fetch-then-setState code.
+- `/api/home` is polled every 60 seconds in silent mode, regardless of the active view. A generation token (a sequence ref captured per request) discards late responses; a failed silent poll keeps the current screen instead of showing an error. This generation-token race guard must be kept on any new async-fetch-then-setState code.
 - Loading/error/ready are modeled as a discriminated union (`HomeState`) — no boolean flag combinations.
 - `ApiError` surfaces the backend's Korean `error` message directly; fallbacks are local Korean strings.
 - KST conversion shifts the Date by +9h and reads `getUTC*` accessors, so rendering is identical regardless of the viewer's local timezone.
-- Refresh reloads home and bumps `panelKey` to remount the two bottom panels — they are excluded from polling and refetch only on manual refresh.
+- Refresh reloads home and bumps `panelKey` to remount the panels of all three views (video series, category share trends, LLM brief) — those panels are excluded from polling and refetch only on manual refresh.
 - Themes are CSS-variable sets: the 10 `[data-theme]` blocks in `styles.css` are the single truth (default `neon-hunter`; `cotton-candy` is the light theme). `src/themes.ts` swatches and the `index.html` bootstrap valid-id list are kept in sync. Legacy localStorage values are migrated at bootstrap: `dark` → `neon-hunter`, `light` → `cotton-candy`.
 - Chart colors bypass the theme system — the fixed palette in `chartColors.ts` is used because recharts SVG cannot take CSS `var()`.
 - `rehype-raw` stays banned in react-markdown — rendering raw HTML from LLM output would open an XSS path.
 - Frontend gate is compile plus build only (`npx tsc --noEmit && npm run build`); behavior is covered by backend tests and smoke checks.
 
 ### 4. Code Pointers
-- `frontend/src/App.tsx` — top bar, 60-second polling plus generation guard, selected-card state, modal state, panel remount
+- `frontend/src/App.tsx` — top bar and `VIEWS`/`view` switching, 60-second polling plus generation guard, selected-card state, modal state, panel remount
 - `frontend/src/api.ts` — fetch wrapper and error contract
 - `frontend/src/components/Row.tsx` — strip/tile/rank-chip/badge rendering
 - `frontend/src/components/TrendsPanel.tsx`, `frontend/src/components/HistoryCharts.tsx` — chart composition
@@ -63,12 +63,12 @@ React 18 + Vite + TypeScript SPA — a single-page home with no router or tabs (
 ## 한국어
 
 ### 1. 개요
-React 18 + Vite + TypeScript SPA로, 라우터·탭 없는 단일 페이지 홈을 제공한다(로고·페이지 타이틀은 "YOUTUBE TREND MONITOR"로 개명 — 구 TREND RADAR, 레이아웃 콘셉트는 그대로다): 톱바(로고, 수집 시각 KST, 새로고침, 테마 버튼) → 히어로 빌보드(기본 전체 1위, 타일 선택 시 그 콘텐츠) → 선택 콘텐츠 추이 패널 → 인사이트 칩 → 가로 스트립 행들(top10/accel/topic/age/category + 클라이언트 삽입 퀴즈 행) → 하단 패널 3개(영상 시계열, 카테고리 점유율 추이, AI 브리핑). 백엔드 `/api/*` 계약만 소비하며, 게이트는 `npx tsc --noEmit && npm run build`다(테스트 러너 없음).
+React 18 + Vite + TypeScript SPA다. 라우터는 없고(로고·페이지 타이틀은 "YOUTUBE TREND MONITOR"로 개명 — 구 TREND RADAR, 레이아웃 콘셉트는 그대로다), 톱바(로고, 상단 메뉴, 수집 시각 KST, 새로고침, 테마 버튼)의 기존 탭 스타일 상단 메뉴가 `view` 상태 하나로 3화면을 전환한다: "홈"(히어로 빌보드 — 기본 전체 1위, 타일 선택 시 그 콘텐츠 — + 선택 콘텐츠 추이 패널 + 인사이트 칩 + 가로 스트립 행들 top10/accel/topic/age/category + 클라이언트 삽입 퀴즈 행), "시계열 추이"(영상 시계열 패널), "점유율 · 리포트"(카테고리 점유율 추이 + AI 브리핑). 백엔드 `/api/*` 계약만 소비하며, 게이트는 `npx tsc --noEmit && npm run build`다(테스트 러너 없음).
 
 ### 2. 구성요소
 | 구성요소 | 경로 | 목적 |
 |---|---|---|
-| 앱 셸 | `frontend/src/App.tsx` | 톱바, `/api/home` 로드(60초 silent 폴링 + 세대 가드), `selected` 카드 상태(타일 클릭 → 히어로 빌보드 전환 + 최상단 스크롤), 모달 상태, 하단 패널 `panelKey` 리마운트 |
+| 앱 셸 | `frontend/src/App.tsx` | 톱바 + `.nav-tabs` 상단 메뉴(`VIEWS`/`view` 상태, `role="tablist"`, 라우터 없음. 전환 시 최상단 스크롤), `/api/home` 로드(60초 silent 폴링 + 세대 가드), `selected` 카드 상태(타일 클릭 → 히어로 빌보드 전환 + 최상단 스크롤), 모달 상태, 서브 화면 패널 `panelKey` 리마운트 |
 | API 클라이언트 | `frontend/src/api.ts` | `fetchJson`/`postJson`과 백엔드 계약의 `{error}` 본문·`status`를 싣는 `ApiError` |
 | 히어로 | `frontend/src/components/Hero.tsx` | 넷플릭스식 빌보드 — 기본은 전체 1위, 타일 선택 시 그 카드의 제목·카테고리 칩(`.hero-cat`)·간단한 소개 `description`(`.hero-desc`)·YouTube 링크·"✕ 1위 화면으로" 해제 버튼으로 전환. maxres 배경 `img` + videoId 단위 `onError` 폴백, 차트인 시간, NEW 칩, 보러가기/내 취향 찾기 |
 | 인사이트 칩 | `frontend/src/components/InsightChips.tsx` | `/api/home`의 규칙 기반 인사이트 문자열(LLM 미사용) |
@@ -77,7 +77,7 @@ React 18 + Vite + TypeScript SPA로, 라우터·탭 없는 단일 페이지 홈�
 | 테마 모달 | `frontend/src/components/ThemeModal.tsx` | `src/themes.ts` 기반 10종 스와치 |
 | 선택 콘텐츠 추이 | `frontend/src/components/SelectedTrend.tsx` | 히어로 바로 아래 "선택한 콘텐츠 추이" 패널 — 선택 카드의 순위/조회수 차트. 시계열 없으면 안내(전체 Top30 진입 영상만 기록) |
 | 시계열 차트 | `frontend/src/components/HistoryCharts.tsx` | 공용 순위+조회수 `LineChart` 쌍 + 로그/선형 토글 — `SelectedTrend`·`VideoSeriesPanel`이 렌더(삭제된 `DetailModal.tsx` 대체) |
-| 영상 시계열 패널 | `frontend/src/components/VideoSeriesPanel.tsx` | 하단 "영상 시계열" 패널 — `/api/trending?scope=all` 기반 영상 셀렉터 + 시계열 차트(`hours=168`). 구 추이 분석 탭 흐름 복원 |
+| 영상 시계열 패널 | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" 화면 패널 — `/api/trending?scope=all` 기반 영상 셀렉터 + 시계열 차트(`hours=168`). 구 추이 분석 탭 흐름 복원 |
 | 시계열 훅 | `frontend/src/useVideoHistory.ts` | 세대 가드 포함 `/api/videos/{id}/history?hours=168` 로드 훅 — `SelectedTrend`·`VideoSeriesPanel`이 공유 |
 | 추이 패널 | `frontend/src/components/TrendsPanel.tsx` | 점유율 스택 `AreaChart` + 진입/이탈 `BarChart`(`hours=48`) |
 | 브리핑 패널 | `frontend/src/components/BriefPanel.tsx` | LLM 브리핑/리포트, react-markdown 렌더(개편 전 로직 유지) |
@@ -88,20 +88,20 @@ React 18 + Vite + TypeScript SPA로, 라우터·탭 없는 단일 페이지 홈�
 | 차트 색 | `frontend/src/chartColors.ts` | 테마 무관 고정 8색 팔레트(슬롯 귀속) — recharts는 SVG fill/stroke에 CSS `var()`를 안정적으로 반영하지 않는다 |
 
 ### 3. 주요 결정
-- 라우터 없는 단일 페이지다: 모든 섹션이 `GET /api/home` 응답 하나로 조합되고, 퀴즈 행(`kind='quiz'`)만 클라이언트가 만든다.
+- 라우터가 없다: 기존 탭 스타일 상단 메뉴(`.nav-tabs`/`.nav-tab.active` 액센트 언더라인, `role="tablist"`)가 `App.tsx`의 `VIEWS`/`view` 상태 하나로 3화면을 전환하고, 전환 시마다 최상단으로 스크롤한다. 서브 화면은 `.page` 컨테이너(구 `.bottom`에서 개명)에 렌더한다. 홈 화면은 `GET /api/home` 응답 하나로 조합되고, 퀴즈 행(`kind='quiz'`)만 클라이언트가 만든다.
 - 타일 클릭은 모달이 아니라 콘텐츠 선택이다(`DetailModal.tsx` 삭제): `App.tsx`가 `selected` 상태를 들고, 히어로가 선택 카드의 넷플릭스식 빌보드로 바뀌며, 페이지가 최상단으로 스크롤되고, 히어로 바로 아래 "선택한 콘텐츠 추이" 패널(`SelectedTrend`)이 나타난다. "✕ 1위 화면으로"가 선택을 해제해 전체 1위로 되돌린다.
-- `/api/home`은 60초마다 silent 모드로 폴링한다. 요청 시점에 캡처한 세대 토큰(시퀀스 ref)이 늦게 도착한 응답을 폐기하고, silent 폴링 실패는 오류 표시 대신 기존 화면을 유지한다. 비동기 fetch 후 setState 하는 코드를 추가할 때 이 세대 토큰 레이스 가드 패턴을 유지한다.
+- `/api/home`은 활성 화면과 무관하게 60초마다 silent 모드로 폴링한다. 요청 시점에 캡처한 세대 토큰(시퀀스 ref)이 늦게 도착한 응답을 폐기하고, silent 폴링 실패는 오류 표시 대신 기존 화면을 유지한다. 비동기 fetch 후 setState 하는 코드를 추가할 때 이 세대 토큰 레이스 가드 패턴을 유지한다.
 - 로딩/오류/준비 상태를 판별 유니온(`HomeState`)으로 모델링한다 — 불리언 플래그 조합을 쓰지 않는다.
 - `ApiError`는 백엔드의 한국어 `error` 메시지를 그대로 노출하고, 폴백도 로컬 한국어 문구다.
 - KST 변환은 Date를 +9h 이동한 뒤 `getUTC*` 접근자로 읽는다 — 조회자의 로컬 타임존과 무관하게 동일하게 렌더된다.
-- 새로고침은 홈 재로드 + `panelKey` 증가로 하단 패널 2개를 리마운트한다 — 하단 패널은 폴링 대상이 아니고 수동 새로고침 때만 재조회한다.
+- 새로고침은 홈 재로드 + `panelKey` 증가로 세 화면의 패널(영상 시계열, 카테고리 점유율 추이, AI 브리핑)을 모두 리마운트한다 — 이 패널들은 폴링 대상이 아니고 수동 새로고침 때만 재조회한다.
 - 테마는 CSS 변수 세트다: `styles.css`의 `[data-theme]` 10종이 단일 진실이다(기본 `neon-hunter`, 라이트는 `cotton-candy`). `src/themes.ts`의 스와치와 `index.html` 부트스트랩의 유효 id 목록을 함께 동기 유지한다. 구버전 localStorage 값은 부트스트랩에서 마이그레이션한다: `dark` → `neon-hunter`, `light` → `cotton-candy`.
 - 차트 색은 테마 시스템을 우회한다 — recharts SVG가 CSS `var()`를 받지 못하므로 `chartColors.ts`의 고정 팔레트를 쓴다.
 - react-markdown에 `rehype-raw`를 추가하지 않는다 — LLM 출력의 raw HTML 렌더는 XSS 경로다.
 - 프론트 게이트는 컴파일+빌드뿐이다(`npx tsc --noEmit && npm run build`). 동작 검증은 백엔드 테스트와 스모크가 담당한다.
 
 ### 4. 코드 포인터
-- `frontend/src/App.tsx` — 톱바, 60초 폴링 + 세대 가드, 선택 카드 상태, 모달 상태, 패널 리마운트
+- `frontend/src/App.tsx` — 톱바와 `VIEWS`/`view` 전환, 60초 폴링 + 세대 가드, 선택 카드 상태, 모달 상태, 패널 리마운트
 - `frontend/src/api.ts` — fetch 래퍼와 오류 계약
 - `frontend/src/components/Row.tsx` — 스트립/타일/순위 칩/배지 렌더
 - `frontend/src/components/TrendsPanel.tsx`, `frontend/src/components/HistoryCharts.tsx` — 차트 구성

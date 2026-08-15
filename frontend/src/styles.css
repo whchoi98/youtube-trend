@@ -108,6 +108,17 @@ button { font-family: inherit; cursor: pointer; }
   background: linear-gradient(90deg, var(--accent), var(--accent2));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+/* 상단 메뉴 — 기존 탭바처럼 액센트 언더라인으로 활성 표시 */
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  background: transparent; border: none; border-radius: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: 14px; padding: 6px 12px;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active {
+  color: var(--text); border-bottom-color: var(--accent); font-weight: 700;
+}
 .last-at { color: var(--muted); font-size: 12px; }
 .spacer { flex: 1; }
 .tb-btn {
@@ -303,8 +314,8 @@ button { font-family: inherit; cursor: pointer; }
 .tile.top:hover .thumbbox { transform: scale(1.07); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55); }
 .tile.top .info { padding: 8px 10px 10px; }
 
-/* ---------- 하단 패널 (차트/브리핑) ---------- */
-.bottom { padding: 0 4vw 80px; display: flex; flex-direction: column; gap: 26px; }
+/* ---------- 서브 화면 (시계열 추이 / 점유율·리포트) ---------- */
+.page { padding: 16px 4vw 80px; display: flex; flex-direction: column; gap: 26px; }
 .panel {
   background: var(--card);
   border: 1px solid color-mix(in srgb, var(--muted) 18%, transparent);
@@ -482,6 +493,12 @@ button { font-family: inherit; cursor: pointer; }
 .toggle.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
 /* ---------- 반응형 ---------- */
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; row-gap: 2px; }
+  .logo { font-size: 16px; }
+  .nav-tab { font-size: 13px; padding: 4px 8px; }
+}
+
 @media (max-width: 640px) {
   .hero { min-height: 44vh; padding-top: 76px; }
   .tile { flex-basis: 190px; }

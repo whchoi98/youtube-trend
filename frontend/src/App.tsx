@@ -20,8 +20,17 @@ type HomeState =
 
 const POLL_MS = 60_000
 
+/** 상단 메뉴 — 기존 3탭 스타일처럼 화면을 전환한다. */
+type ViewKey = 'home' | 'series' | 'trends'
+const VIEWS: { key: ViewKey; label: string }[] = [
+  { key: 'home', label: '홈' },
+  { key: 'series', label: '시계열 추이' },
+  { key: 'trends', label: '점유율 · 리포트' },
+]
+
 export default function App() {
   const [home, setHome] = useState<HomeState>({ status: 'loading' })
+  const [view, setView] = useState<ViewKey>('home')
   const [quizRow, setQuizRow] = useState<HomeRow | null>(null)
   const [theme, setThemeState] = useState<string>(() => getTheme())
   const [showQuiz, setShowQuiz] = useState(false)
@@ -73,10 +82,29 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
   }
 
+  const switchView = (v: ViewKey) => {
+    setView(v)
+    window.scrollTo({ top: 0 })
+  }
+
   return (
     <div className="app">
       <header className="topbar">
         <div className="logo">YOUTUBE TREND MONITOR</div>
+        <nav className="nav-tabs" role="tablist" aria-label="화면 선택">
+          {VIEWS.map((v) => (
+            <button
+              key={v.key}
+              type="button"
+              role="tab"
+              aria-selected={view === v.key}
+              className={view === v.key ? 'nav-tab active' : 'nav-tab'}
+              onClick={() => switchView(v.key)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </nav>
         {home.status === 'ready' && (
           <span className="last-at">수집 {formatClockKst(home.data.capturedAt)}</span>
         )}
@@ -85,16 +113,18 @@ export default function App() {
         <button type="button" className="tb-btn" onClick={() => setShowTheme(true)}>🎨 테마</button>
       </header>
 
-      {home.status === 'loading' && <div className="msg">트렌드 불러오는 중…</div>}
+      {view === 'home' && home.status === 'loading' && (
+        <div className="msg">트렌드 불러오는 중…</div>
+      )}
 
-      {home.status === 'error' && (
+      {view === 'home' && home.status === 'error' && (
         <div className="msg">
           <p>{home.message}</p>
           <button type="button" className="tb-btn" onClick={() => loadHome()}>다시 시도</button>
         </div>
       )}
 
-      {home.status === 'ready' && (
+      {view === 'home' && home.status === 'ready' && (
         <>
           <Hero
             hero={home.data.hero}
@@ -124,22 +154,29 @@ export default function App() {
               <div className="msg small">🏷️ AI 태깅 진행 중 — 잠시 후 주제별 행이 추가됩니다</div>
             )}
           </main>
-
-          <div className="bottom">
-            <section className="panel">
-              <h2>영상 시계열</h2>
-              <VideoSeriesPanel key={`series-${panelKey}`} />
-            </section>
-            <section className="panel">
-              <h2>카테고리 점유율 추이</h2>
-              <TrendsPanel key={`trends-${panelKey}`} />
-            </section>
-            <section className="panel">
-              <h2>AI 브리핑</h2>
-              <BriefPanel key={`brief-${panelKey}`} />
-            </section>
-          </div>
         </>
+      )}
+
+      {view === 'series' && (
+        <div className="page">
+          <section className="panel">
+            <h2>영상 시계열</h2>
+            <VideoSeriesPanel key={`series-${panelKey}`} />
+          </section>
+        </div>
+      )}
+
+      {view === 'trends' && (
+        <div className="page">
+          <section className="panel">
+            <h2>카테고리 점유율 추이</h2>
+            <TrendsPanel key={`trends-${panelKey}`} />
+          </section>
+          <section className="panel">
+            <h2>AI 브리핑</h2>
+            <BriefPanel key={`brief-${panelKey}`} />
+          </section>
+        </div>
       )}
 
       {showQuiz && (

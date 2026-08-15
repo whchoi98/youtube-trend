@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add per-tile rank chips (top-left) and an unchanged "-" state to the top-right delta badges; collect a 200-character description per video for the hero synopsis
 
 ### Changed
-- Replace the three-tab layout with the single-page home; category share and LLM briefing/report panels moved to the bottom of the home page
+- Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
 - Rename the top logo/title to YOUTUBE TREND MONITOR; the video detail modal is superseded by hero selection
 
 ## [0.1.0] - 2026-08-04
@@ -76,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 타일 좌측 상단 순위 칩과 우측 상단 델타 배지의 유지("-") 상태 추가, 히어로 소개문용 영상 설명(200자) 수집 추가
 
 ### Changed
-- 3탭 레이아웃을 단일 페이지 홈으로 교체, 카테고리 점유율·LLM 브리핑/리포트 패널은 홈 하단으로 이동
+- 3탭 레이아웃을 넷플릭스형 홈으로 교체한 뒤, 기존 탭 스타일의 상단 메뉴를 재도입: 홈 / 시계열 추이 / 점유율·리포트 화면 분리(차트·LLM 브리핑은 각자 화면에서 표시)
 - 상단 로고/타이틀을 YOUTUBE TREND MONITOR로 변경, 영상 상세 모달은 히어로 선택 방식으로 대체
 
 ## [0.1.0] - 2026-08-04
