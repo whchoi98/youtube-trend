@@ -100,9 +100,13 @@ class BedrockClient:
             "inferenceConfig": {"maxTokens": max_tokens},
         }
         try:
+            # 비스트리밍 호출은 생성이 끝날 때까지 응답이 없다 — 읽기 타임아웃을
+            # 요청 토큰 상한에 비례해 늘린다(약 40tok/s 가정). 고정 25초는
+            # 태깅(maxTokens 4000)처럼 긴 생성에서 ReadTimeout을 낸다.
             res = self.client.post(ENDPOINT, json=body, headers={
                 "authorization": f"Bearer {self.token}",
-                "content-type": "application/json"})
+                "content-type": "application/json"},
+                timeout=max(TIMEOUT, max_tokens / 40))
         except httpx.HTTPError as e:
             log.error("bedrock request failed: %s", type(e).__name__)
             raise LlmUpstreamError(504) from e
