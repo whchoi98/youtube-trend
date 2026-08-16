@@ -33,7 +33,7 @@ export function PreviewCard({ card, anchor }: { card: HomeCard; anchor: DOMRect 
         {card.description && <p className="pv-desc">{card.description}</p>}
         {comment && (
           <div className="pv-ai">
-            <span className="pv-ai-label">AI 브리핑</span>
+            <span className="ai-chip">AI 브리핑</span>
             {comment}
           </div>
         )}

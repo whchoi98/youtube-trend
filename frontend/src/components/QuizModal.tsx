@@ -61,7 +61,7 @@ export function QuizModal({ onClose, onResult }: {
         </>
       ) : (
         <>
-          <h3>🧭 내 취향 찾기</h3>
+          <h3>내 취향 찾기</h3>
           {QUIZ.map((q) => (
             <div className="q" key={q.key}>
               <div className="ql">{q.label}</div>

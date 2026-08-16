@@ -109,7 +109,7 @@ def test_home_merges_tags_topic_and_age_rows(table):
     rows = {r["kind"]: r for r in body["rows"]}
     assert rows["topic"]["title"] == "#먹방"
     assert len(rows["topic"]["items"]) == 3
-    assert rows["age"]["title"] == "👀 20대가 보는 중 (추정)"
+    assert rows["age"]["title"] == "20대가 보는 중"
     assert rows["top10"]["items"][0]["tags"] == {
         "topics": ["먹방"], "age": "20대", "vibe": "도파민"}
     # 태그 없는 카드에는 tags 필드가 없다
@@ -185,9 +185,9 @@ def test_home_includes_region_and_spotlight_rows(table):
     rows = {r["kind"]: r for r in body["rows"]}
 
     assert rows["region"]["regionCode"] == "US"
-    assert rows["region"]["title"] == "🇺🇸 미국은 지금"
+    assert rows["region"]["title"] == "미국은 지금"
     assert rows["region"]["items"][0]["videoId"] == "video-us"
-    assert rows["spotlight"]["title"] == "☁️ AWS 인기 영상"
+    assert rows["spotlight"]["title"] == "AWS 인기 영상"
     assert rows["spotlight"]["items"][0]["videoId"] == "video-aws"
     # 순서: spotlight는 accel 자리(상단), region은 category 뒤(맨 뒤)
     kinds = [r["kind"] for r in body["rows"]]
@@ -210,5 +210,5 @@ def test_home_includes_music_chart_row(table):
     store.put_snapshot("chart-ytmusic", NOW, [card("video-song", 1)])
     body = client.get("/api/home").json()
     rows = {r["kind"]: r for r in body["rows"]}
-    assert rows["chart"]["title"] == "🎶 YouTube Music 인기곡"
+    assert rows["chart"]["title"] == "YouTube Music 인기곡"
     assert rows["chart"]["items"][0]["videoId"] == "video-song"

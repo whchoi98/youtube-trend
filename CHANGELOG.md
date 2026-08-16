@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add token streaming for AI briefings: `GET /api/brief/stream` relays Bedrock converse-stream deltas over SSE end-to-end (Bearer-only AWS eventstream parser, no boto3), with a live pipeline trace (DynamoDB reads, cache check, prompt build, Bedrock call, cache store) rendered in the panel; truncated streams are never cached
 
 ### Changed
+- Refine the UI toward a more premium look: emoji removed from row titles, insights, sidebar, and buttons in favor of gradient accent bars on headings, sidebar section headers, and a small "AI" text chip
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
 - Rename the top logo/title to YOUTUBE TREND MONITOR; the video detail modal is superseded by hero selection
 
@@ -86,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AI 브리핑 토큰 스트리밍 추가: `GET /api/brief/stream`이 Bedrock converse-stream 델타를 SSE로 전 구간 중계(Bearer 전용 AWS eventstream 파서, boto3 미사용), 파이프라인 트레이스(DynamoDB 조회·캐시 확인·프롬프트 구성·Bedrock 호출·캐시 저장)를 패널에 실시간 표시, 절단된 스트림은 캐시하지 않음
 
 ### Changed
+- UI 고급화: 행 제목·인사이트·사이드바·버튼의 이모지를 제거하고 제목 그라디언트 액센트 바, 사이드바 섹션 헤더, "AI" 텍스트 칩으로 대체
 - 3탭 레이아웃을 넷플릭스형 홈으로 교체한 뒤, 기존 탭 스타일의 상단 메뉴를 재도입: 홈 / 시계열 추이 / 점유율·리포트 화면 분리(차트·LLM 브리핑은 각자 화면에서 표시)
 - 상단 로고/타이틀을 YOUTUBE TREND MONITOR로 변경, 영상 상세 모달은 히어로 선택 방식으로 대체
 

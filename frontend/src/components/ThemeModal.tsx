@@ -9,7 +9,7 @@ export function ThemeModal({ current, onSelect, onClose }: {
 }) {
   return (
     <Modal onClose={onClose} label="테마 선택">
-      <h3>🎨 테마 선택</h3>
+      <h3>테마 선택</h3>
       <div className="themes">
         {THEMES.map((t) => (
           <button

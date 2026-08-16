@@ -9,11 +9,6 @@ from datetime import datetime, timedelta
 from app.categories import CATEGORIES, CATEGORY_NAMES
 from app.regions import REGIONS, REGION_TITLES
 
-CATEGORY_EMOJI = {
-    "10": "🎵", "20": "🎮", "24": "🎬", "25": "📰",
-    "17": "⚽", "1": "🎞️", "28": "🔬", "23": "😂",
-}
-
 TOPIC_ROW_MIN = 3      # 주제/연령 행 최소 타일 수 — 이보다 적으면 행이 초라하다
 TOPIC_ROW_MAX = 4      # 주제 행 최대 개수
 AGE_ROW_ORDER = ["10대", "20대", "3040"]  # 전연령은 행으로 만들지 않는다(변별력 없음)
@@ -72,21 +67,21 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
     """
     rows = []
     if all_items:
-        rows.append({"kind": "top10", "title": "🔥 지금 한국 급상승 TOP 10",
+        rows.append({"kind": "top10", "title": "지금 한국 급상승 TOP 10",
                      "items": all_items[:20]})
 
     accel = [c for c in all_items if _pos_int(c.get("viewsPerHour"))]
     accel.sort(key=lambda c: (-c["viewsPerHour"], c.get("rank") or 999))
     if accel:
-        rows.append({"kind": "accel", "title": "🚀 조회수 급증 중",
+        rows.append({"kind": "accel", "title": "조회수 급증 중",
                      "items": accel[:10]})
 
     if chart_items:
-        rows.append({"kind": "chart", "title": "🎶 YouTube Music 인기곡",
+        rows.append({"kind": "chart", "title": "YouTube Music 인기곡",
                      "items": chart_items})
 
     if spotlight_items:
-        rows.append({"kind": "spotlight", "title": "☁️ AWS 인기 영상",
+        rows.append({"kind": "spotlight", "title": "AWS 인기 영상",
                      "items": spotlight_items})
 
     by_topic = {}
@@ -104,16 +99,14 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
     for age in AGE_ROW_ORDER:
         cs = [c for c in all_items if (c.get("tags") or {}).get("age") == age]
         if len(cs) >= TOPIC_ROW_MIN:
-            rows.append({"kind": "age", "title": f"👀 {age}가 보는 중 (추정)",
+            rows.append({"kind": "age", "title": f"{age}가 보는 중",
                          "items": cs})
 
     for cid, _name in CATEGORIES:
         cards = cat_items.get(cid)
         if cards:
-            emoji = CATEGORY_EMOJI.get(cid, "")
-            title = f"{emoji} {CATEGORY_NAMES[cid]}".strip()
             rows.append({"kind": "category", "categoryId": cid,
-                         "title": title, "items": cards})
+                         "title": CATEGORY_NAMES[cid], "items": cards})
 
     for code, _name in REGIONS:
         cards = (region_items or {}).get(code)
@@ -142,15 +135,15 @@ def build_insights(items):
     risers = [c for c in items if _pos_int(c.get("delta"))]
     if risers:
         top = max(risers, key=lambda c: c["delta"])
-        out.append(f"🚀 「{_short(top.get('title'))}」 {top['delta']}계단 상승")
+        out.append(f"「{_short(top.get('title'))}」 {top['delta']}계단 상승")
     fast = [c for c in items if _pos_int(c.get("viewsPerHour"))]
     if fast:
         top = max(fast, key=lambda c: c["viewsPerHour"])
-        out.append(f"⚡ 「{_short(top.get('title'))}」 시간당 +{_fmt_count(top['viewsPerHour'])}회")
+        out.append(f"「{_short(top.get('title'))}」 시간당 +{_fmt_count(top['viewsPerHour'])}회")
     new_count = sum(1 for c in items
                     if c.get("baseline") is not None and c.get("prevRank") is None)
     if new_count:
-        out.append(f"✨ 새 진입 {new_count}편")
+        out.append(f"새 진입 {new_count}편")
     if items:
         counts = {}
         for c in items:
@@ -160,8 +153,7 @@ def build_insights(items):
         name = CATEGORY_NAMES.get(cid)
         if name and cnt >= 2:
             pct = round(cnt / len(items) * 100)
-            emoji = CATEGORY_EMOJI.get(cid, "📊")
-            out.append(f"{emoji} {name} 점유 {pct}% — Top{len(items)} 최다")
+            out.append(f"{name} 점유 {pct}% — Top{len(items)} 최다")
     return out
 
 

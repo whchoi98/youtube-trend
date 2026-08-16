@@ -127,7 +127,7 @@ export default function App() {
         )}
         <div className="spacer" />
         <button type="button" className="tb-btn" onClick={refresh}>새로고침</button>
-        <button type="button" className="tb-btn" onClick={() => setShowTheme(true)}>🎨 테마</button>
+        <button type="button" className="tb-btn" onClick={() => setShowTheme(true)}>테마</button>
       </header>
 
       {view === 'home' && home.status === 'loading' && (
@@ -170,7 +170,8 @@ export default function App() {
                       key={rowKey(row)}
                       row={row}
                       hint={
-                        row.kind === 'topic' || row.kind === 'age' ? 'AI 태깅'
+                        row.kind === 'topic' ? 'AI 태깅'
+                          : row.kind === 'age' ? 'AI 태깅 · 추정'
                           : row.kind === 'accel' ? '시간당 증가 기준'
                             : row.kind === 'spotlight' ? 'AWS Korea 채널'
                               : row.kind === 'chart' ? 'YouTube Music 공식 주간 차트'
@@ -181,7 +182,7 @@ export default function App() {
                     />
                   ))}
                   {!home.data.tagged && home.data.llmEnabled && (
-                    <div className="msg small">🏷️ AI 태깅 진행 중 — 잠시 후 주제별 행이 추가됩니다</div>
+                    <div className="msg small">AI 태깅 진행 중 — 잠시 후 주제별 행이 추가됩니다</div>
                   )}
                 </>
               )}
