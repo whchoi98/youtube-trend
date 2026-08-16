@@ -13,17 +13,17 @@ function sideLabel(row: HomeRow): string {
   if (row.kind === 'accel') return '조회수 급증'
   if (row.kind === 'chart') return row.title.replace('YouTube Music · ', '')
   if (row.kind === 'spotlight') return 'AWS Korea'
+  if (row.kind === 'vibe') return row.title.replace('이 필요할 때', '').replace(' 충전소', '')
   return row.title
     .replace('은 지금', '')
     .replace('는 지금', '')
-    .replace('가 보는 중', '')
 }
 
 /** 주제 묶음 — 사이드바 섹션 헤더로 표기한다. */
 const GROUPS: { label: string; kinds: RowKind[] }[] = [
-  { label: '랭킹', kinds: ['top10', 'accel'] },
+  { label: '랭킹', kinds: ['top10', 'accel', 'new', 'climb'] },
   { label: 'YouTube Music', kinds: ['chart'] },
-  { label: 'AI 추천', kinds: ['topic', 'age'] },
+  { label: 'AI 추천', kinds: ['topic', 'vibe'] },
   { label: '분야', kinds: ['category'] },
   { label: '국가', kinds: ['region'] },
   { label: '채널', kinds: ['spotlight'] },

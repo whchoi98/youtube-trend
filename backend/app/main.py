@@ -106,12 +106,13 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
 
     from app.api import (trending as trending_api, videos as videos_api,
                          trends as trends_api, brief as brief_api,
-                         home as home_api)
+                         home as home_api, charts as charts_api)
     app.include_router(trending_api.router)
     app.include_router(videos_api.router)
     app.include_router(trends_api.router)
     app.include_router(brief_api.router)
     app.include_router(home_api.router)
+    app.include_router(charts_api.router)
 
     import os
     static_dir = os.environ.get("STATIC_DIR", "/srv/static")

@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename the "accelerating now" row to a clearer label with an explanatory hint (hourly view growth)
 - Add token streaming for AI briefings: `GET /api/brief/stream` relays Bedrock converse-stream deltas over SSE end-to-end (Bearer-only AWS eventstream parser, no boto3), with a live pipeline trace (DynamoDB reads, cache check, prompt build, Bedrock call, cache store) rendered in the panel; truncated streams are never cached
 
+- Add a YouTube Music time-series panel on the trends screen: pick a chart and a song to see hourly rank/views derived from chart snapshots (`GET /api/charts/{chartId}/videos/{videoId}/history`, hours capped at 72)
+- Add "first entry today" and "rank climbers" rows plus AI-mood rows (healing / dopamine) in place of the removed age-group rows; sidebar font weight increased
+
 ### Changed
 - Refine the UI toward a more premium look: emoji removed from row titles, insights, sidebar, and buttons in favor of gradient accent bars on headings, sidebar section headers, and a small "AI" text chip
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
@@ -89,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 넷플릭스식 좌측 사이드바 추가(전체·급증·YT Music·AWS·AI 주제/연령·분야·국가) — 주제 선택 시 큰 순위 숫자 스타일의 TOP 20 뷰 표시
 - "지금 가속 중" 행을 더 읽기 쉬운 이름("조회수 급증 중")과 설명 힌트(시간당 증가 기준)로 변경
 - AI 브리핑 토큰 스트리밍 추가: `GET /api/brief/stream`이 Bedrock converse-stream 델타를 SSE로 전 구간 중계(Bearer 전용 AWS eventstream 파서, boto3 미사용), 파이프라인 트레이스(DynamoDB 조회·캐시 확인·프롬프트 구성·Bedrock 호출·캐시 저장)를 패널에 실시간 표시, 절단된 스트림은 캐시하지 않음
+
+- 추이 화면에 YouTube Music 시계열 패널 추가: 차트·곡을 골라 차트 스냅샷에서 파생한 시간별 순위/조회수 확인(`GET /api/charts/{chartId}/videos/{videoId}/history`, hours 상한 72)
+- 연령대 행을 제거하고 "오늘 첫 진입"·"순위 역주행" 행과 AI 무드 행(힐링/도파민)으로 대체, 사이드바 폰트 굵기 강화
 
 ### Changed
 - UI 고급화: 행 제목·인사이트·사이드바·버튼의 이모지를 제거하고 제목 그라디언트 액센트 바, 사이드바 섹션 헤더, "AI" 텍스트 칩으로 대체

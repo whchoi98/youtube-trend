@@ -93,7 +93,7 @@ def test_home_hero_tenure_counts_consecutive_buckets(table):
     assert body["hero"]["tenureHours"] == 3
 
 
-def test_home_merges_tags_topic_and_age_rows(table):
+def test_home_merges_tags_topic_and_vibe_rows(table):
     NOW = _now()
     client, store = make_client(table)
     cards = [card(f"video-{i:02d}", i) for i in range(1, 7)]
@@ -109,7 +109,9 @@ def test_home_merges_tags_topic_and_age_rows(table):
     rows = {r["kind"]: r for r in body["rows"]}
     assert rows["topic"]["title"] == "#먹방"
     assert len(rows["topic"]["items"]) == 3
-    assert rows["age"]["title"] == "20대가 보는 중"
+    assert rows["vibe"]["title"] == "도파민 충전소"
+    assert len(rows["vibe"]["items"]) == 3
+    assert "age" not in rows  # 연령대 행은 제거됐다
     assert rows["top10"]["items"][0]["tags"] == {
         "topics": ["먹방"], "age": "20대", "vibe": "도파민"}
     # 태그 없는 카드에는 tags 필드가 없다
@@ -235,3 +237,20 @@ def test_home_channels_null_without_snapshot(table):
     client, store = make_client(table)
     store.put_snapshot("all", NOW, [card("video-a", 1)])
     assert client.get("/api/home").json()["channels"] is None
+
+
+def test_home_new_and_climb_rows(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW - timedelta(hours=2), [
+        card("video-a", 5), card("video-b", 8), card("video-c", 1)])
+    store.put_snapshot("all", NOW, [
+        card("video-a", 1), card("video-b", 2), card("video-c", 3),
+        card("video-d", 4), card("video-e", 5)])
+    body = client.get("/api/home").json()
+    rows = {r["kind"]: r for r in body["rows"]}
+    # 첫 진입: d, e (기준선에 없던 영상), 전체 순위 순
+    assert [c["videoId"] for c in rows["new"]["items"]] == ["video-d", "video-e"]
+    # 역주행: b(+6) > a(+4), 하락한 c는 제외
+    assert [c["videoId"] for c in rows["climb"]["items"]] == ["video-b", "video-a"]
+    assert rows["climb"]["title"] == "순위 역주행"

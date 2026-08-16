@@ -14,9 +14,10 @@ const TOOLTIP_STYLE = {
 
 /** 영상 시계열 차트 쌍(순위 + 조회수, 로그/선형 토글) — 상세 모달과
  *  영상 시계열 패널이 공유한다. */
-export function HistoryCharts({ points, height = 160 }: {
+export function HistoryCharts({ points, height = 160, maxRank = 30 }: {
   points: HistoryPoint[]
   height?: number
+  maxRank?: number
 }) {
   const [scale, setScale] = useState<'linear' | 'log'>('linear')
   const lineColor = seriesAccent()
@@ -29,7 +30,7 @@ export function HistoryCharts({ points, height = 160 }: {
           <LineChart data={points}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="ts" tickFormatter={formatTsKst} stroke="var(--text-muted)" minTickGap={24} />
-            <YAxis reversed domain={[1, 30]} allowDecimals={false} stroke="var(--text-muted)" />
+            <YAxis reversed domain={[1, maxRank]} allowDecimals={false} stroke="var(--text-muted)" />
             <Tooltip
               labelFormatter={(label) => formatTsKst(String(label))}
               formatter={(value) => [`${value}위`, '순위']}

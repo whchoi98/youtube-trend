@@ -10,9 +10,11 @@ from app.categories import CATEGORIES, CATEGORY_NAMES
 from app.charts import MUSIC_CHARTS
 from app.regions import REGIONS, REGION_TITLES
 
-TOPIC_ROW_MIN = 3      # 주제/연령 행 최소 타일 수 — 이보다 적으면 행이 초라하다
+TOPIC_ROW_MIN = 3      # 주제/무드 행 최소 타일 수 — 이보다 적으면 행이 초라하다
 TOPIC_ROW_MAX = 4      # 주제 행 최대 개수
-AGE_ROW_ORDER = ["10대", "20대", "3040"]  # 전연령은 행으로 만들지 않는다(변별력 없음)
+DERIVED_ROW_MIN = 2    # 신규 진입/역주행 행 최소 타일 수
+# 무드 행 — AI 태깅의 vibe 값 중 행으로 만들 무드와 제목
+VIBE_ROWS = [("힐링", "힐링이 필요할 때"), ("도파민", "도파민 충전소")]
 
 # 취향 퀴즈: (mood, time, style) 8조합 → 유형명. 결정적 매핑 — LLM 미사용.
 QUIZ_MOODS = ("힐링", "도파민")
@@ -61,10 +63,11 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
                chart_items=None):
     """홈 행 구성. 인자들은 파생·태그 병합이 끝난 카드 목록이다.
 
-    순서: top10 → accel → chart(YT Music 5종) → topic(태그) → age(태그) →
-    분야 → 국가 → spotlight(AWS, 맨 하단). 빈 행은 넣지 않는다. top10 행은
-    사이드바 주제 뷰(TOP 20)를 위해 20개까지 싣는다 — 홈 스트립은 프론트가
-    10개로 잘라 표시한다. chart_items는 {접미사: 카드 목록} dict다.
+    순서: top10 → accel → new(첫 진입) → climb(역주행) → chart(YT Music 5종)
+    → topic(태그) → vibe(무드 태그) → 분야 → 국가 → spotlight(AWS, 맨 하단).
+    빈 행은 넣지 않는다. top10 행은 사이드바 주제 뷰(TOP 20)를 위해 20개까지
+    싣는다 — 홈 스트립은 프론트가 10개로 잘라 표시한다. chart_items는
+    {접미사: 카드 목록} dict다.
     """
     rows = []
     if all_items:
@@ -76,6 +79,19 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
     if accel:
         rows.append({"kind": "accel", "title": "조회수 급증 중",
                      "items": accel[:10]})
+
+    # 오늘 첫 진입 — 기준선에 없던 신규 차트인 (baseline 있음 + prevRank null)
+    fresh = [c for c in all_items
+             if c.get("baseline") is not None and c.get("prevRank") is None]
+    if len(fresh) >= DERIVED_ROW_MIN:
+        rows.append({"kind": "new", "title": "오늘 첫 진입", "items": fresh})
+
+    # 순위 역주행 — 기준선 대비 순위 상승폭 상위
+    climbers = [c for c in all_items if _pos_int(c.get("delta"))]
+    climbers.sort(key=lambda c: (-c["delta"], c.get("rank") or 999))
+    if len(climbers) >= DERIVED_ROW_MIN:
+        rows.append({"kind": "climb", "title": "순위 역주행",
+                     "items": climbers[:10]})
 
     for suffix, _pid, title in MUSIC_CHARTS:
         cards = (chart_items or {}).get(suffix)
@@ -95,11 +111,10 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
     topic_rows.sort(key=lambda r: (-len(r["items"]), r["title"]))
     rows.extend(topic_rows[:TOPIC_ROW_MAX])
 
-    for age in AGE_ROW_ORDER:
-        cs = [c for c in all_items if (c.get("tags") or {}).get("age") == age]
+    for vibe, title in VIBE_ROWS:
+        cs = [c for c in all_items if (c.get("tags") or {}).get("vibe") == vibe]
         if len(cs) >= TOPIC_ROW_MIN:
-            rows.append({"kind": "age", "title": f"{age}가 보는 중",
-                         "items": cs})
+            rows.append({"kind": "vibe", "title": title, "items": cs})
 
     for cid, _name in CATEGORIES:
         cards = cat_items.get(cid)

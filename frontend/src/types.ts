@@ -24,8 +24,8 @@ export interface HomeCard extends Card { tags?: Tags }
 
 /** 홈 스트립 행. 'quiz'는 클라이언트에서 퀴즈 결과로 만드는 행이다. */
 export type RowKind =
-  | 'top10' | 'accel' | 'chart' | 'spotlight' | 'topic' | 'age' | 'category'
-  | 'region' | 'quiz'
+  | 'top10' | 'accel' | 'new' | 'climb' | 'chart' | 'spotlight' | 'topic'
+  | 'vibe' | 'category' | 'region' | 'quiz'
 export interface HomeRow {
   kind: RowKind
   title: string

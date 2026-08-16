@@ -434,7 +434,7 @@ npm run dev
 youtube-trends/
   backend/           # FastAPI 앱 (collector, store, derive, tagging, llm, api)
     app/             # 애플리케이션 소스
-    tests/           # pytest 스위트 (124개 테스트)
+    tests/           # pytest 스위트 (129개 테스트)
     Dockerfile       # 멀티스테이지 이미지 (빌드 컨텍스트 = 저장소 루트)
   frontend/          # React 18 + Vite + TypeScript SPA (recharts, react-markdown)
     src/             # 단일 페이지 Trend Radar 앱 (App.tsx, 컴포넌트, API 클라이언트)

@@ -10,6 +10,7 @@ import { ChannelStrip } from './components/ChannelStrip'
 import { Sidebar, rowKey } from './components/Sidebar'
 import { TrendsPanel } from './components/TrendsPanel'
 import { VideoSeriesPanel } from './components/VideoSeriesPanel'
+import { ChartSeriesPanel } from './components/ChartSeriesPanel'
 import { BriefPanel } from './components/BriefPanel'
 import { QuizModal } from './components/QuizModal'
 import { ThemeModal } from './components/ThemeModal'
@@ -177,12 +178,13 @@ export default function App() {
                     <Row
                       row={row}
                       hint={
-                        row.kind === 'topic' ? 'AI 태깅'
-                          : row.kind === 'age' ? 'AI 태깅 · 추정'
+                        row.kind === 'topic' || row.kind === 'vibe' ? 'AI 태깅 · 추정'
                           : row.kind === 'accel' ? '시간당 증가 기준'
-                            : row.kind === 'spotlight' ? 'AWS Korea 채널'
-                              : row.kind === 'chart' ? 'YouTube Music 공식 차트'
-                                : undefined
+                            : row.kind === 'new' ? '기준선에 없던 신규 차트인'
+                              : row.kind === 'climb' ? '순위 상승폭 기준'
+                                : row.kind === 'spotlight' ? 'AWS Korea 채널'
+                                  : row.kind === 'chart' ? 'YouTube Music 공식 차트'
+                                    : undefined
                       }
                       onTile={selectCard}
                       limit={row.kind === 'top10' ? 10 : undefined}
@@ -207,6 +209,10 @@ export default function App() {
           <section className="panel">
             <h2>영상 시계열</h2>
             <VideoSeriesPanel key={`series-${panelKey}`} />
+          </section>
+          <section className="panel">
+            <h2>YouTube Music 시계열</h2>
+            <ChartSeriesPanel key={`chart-series-${panelKey}`} />
           </section>
         </div>
       )}
