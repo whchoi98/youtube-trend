@@ -7,7 +7,7 @@
 ## English
 
 ### 1. Overview
-LLM layer: direct REST calls to the Bedrock Converse API (`global.anthropic.claude-sonnet-4-6`, Seoul endpoint) with Bearer authentication generate the "brief now" / "daily comparison" / "trend report" texts, plus a batch AI tagging pipeline that labels the latest Top30 snapshot in a single call with fixed-vocabulary tags and a laundered free-text one-line `comment` analysis. A missing token degrades gracefully: the interactive endpoints answer 503 (`LlmDisabled`), and tagging silently skips — the rest of the service is unaffected. The quiz endpoint (`POST /api/quiz`) deliberately does NOT call the LLM; it scores deterministically over stored tags.
+LLM layer: direct REST calls to the Bedrock Converse API (`global.anthropic.claude-sonnet-4-6`, Seoul endpoint) with Bearer authentication generate the "brief now" / "daily comparison" / "trend report" texts, plus a batch AI tagging pipeline that labels the latest Top30 snapshot in a single call with fixed-vocabulary tags and a laundered free-text one-line `comment` analysis. A missing token degrades gracefully: the interactive endpoints answer 503 (`LlmDisabled`), and tagging silently skips — the rest of the service is unaffected. The quiz endpoint (`POST /api/quiz`) deliberately does NOT call the LLM; it scores deterministically over stored tags. The stored vibe tags also drive the two home mood rows (kind `vibe` — "힐링이 필요할 때"/"도파민 충전소") without any extra LLM call.
 
 ### 2. Components
 | Component | Path | Purpose |
@@ -52,7 +52,7 @@ LLM layer: direct REST calls to the Bedrock Converse API (`global.anthropic.clau
 ## 한국어
 
 ### 1. 개요
-LLM 계층이다. Bedrock Converse API(`global.anthropic.claude-sonnet-4-6`, 서울 엔드포인트)를 Bearer 인증 REST로 직접 호출해 "오늘의 브리핑"/"어제와 비교"/"추이 리포트" 텍스트를 생성하고, 추가로 배치 AI 태깅 파이프라인이 최신 Top30 스냅샷을 고정 어휘 태그 + 세탁된 자유 텍스트 한 줄 분석 `comment`로 1콜에 라벨링한다. 토큰 미설정 시 우아하게 격하된다: 대화형 엔드포인트는 503(`LlmDisabled`)을 답하고 태깅은 조용히 건너뛰며, 나머지 서비스에는 영향이 없다. 퀴즈 엔드포인트(`POST /api/quiz`)는 의도적으로 LLM을 호출하지 않는다 — 저장된 태그 위에서 결정적으로 점수를 계산한다.
+LLM 계층이다. Bedrock Converse API(`global.anthropic.claude-sonnet-4-6`, 서울 엔드포인트)를 Bearer 인증 REST로 직접 호출해 "오늘의 브리핑"/"어제와 비교"/"추이 리포트" 텍스트를 생성하고, 추가로 배치 AI 태깅 파이프라인이 최신 Top30 스냅샷을 고정 어휘 태그 + 세탁된 자유 텍스트 한 줄 분석 `comment`로 1콜에 라벨링한다. 토큰 미설정 시 우아하게 격하된다: 대화형 엔드포인트는 503(`LlmDisabled`)을 답하고 태깅은 조용히 건너뛰며, 나머지 서비스에는 영향이 없다. 퀴즈 엔드포인트(`POST /api/quiz`)는 의도적으로 LLM을 호출하지 않는다 — 저장된 태그 위에서 결정적으로 점수를 계산한다. 저장된 vibe 태그는 추가 LLM 호출 없이 홈 무드 행 2종(kind `vibe` — "힐링이 필요할 때"/"도파민 충전소")도 구동한다.
 
 ### 2. 구성요소
 | 구성요소 | 경로 | 목적 |
