@@ -15,6 +15,7 @@ from app import home as home_logic
 from app.api.deps import get_settings, get_store
 from app.categories import CATEGORIES
 from app.derive import with_derived
+from app.regions import REGIONS
 from app.store import keys
 
 router = APIRouter(prefix="/api")
@@ -74,6 +75,18 @@ def home(request: Request, store=Depends(get_store),
         _csnap, cards = cgot
         cat_items[cid] = home_logic.merge_tags(cards, tags)
 
+    region_items = {}
+    for code, _name in REGIONS:
+        rgot = _derived_items(store, f"rgn-{code}", now)
+        if rgot is not None:
+            region_items[code] = home_logic.merge_tags(rgot[1], tags)
+
+    sgot = _derived_items(store, "spot-aws", now)
+    spotlight_items = home_logic.merge_tags(sgot[1], tags) if sgot else None
+
+    cgot2 = _derived_items(store, "chart-ytmusic", now)
+    chart_items = home_logic.merge_tags(cgot2[1], tags) if cgot2 else None
+
     hero = None
     if items:
         hero = dict(min(items, key=lambda c: c.get("rank") or 999))
@@ -92,7 +105,8 @@ def home(request: Request, store=Depends(get_store),
         "llmEnabled": bool(settings.bedrock_token),
         "insights": home_logic.build_insights(items),
         "hero": hero,
-        "rows": home_logic.build_rows(items, cat_items),
+        "rows": home_logic.build_rows(items, cat_items, region_items,
+                                      spotlight_items, chart_items),
     }
     request.app.state.home_cache = (time.monotonic() + CACHE_TTL_SECONDS, payload)
     return payload

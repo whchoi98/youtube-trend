@@ -1,5 +1,5 @@
 ---
-description: 전체 검증 실행 — backend pytest(94) → frontend tsc+build → infra synth → run-all.sh(있으면) → 라이브 스모크(배포 시)
+description: 전체 검증 실행 — backend pytest(120) → frontend tsc+build → infra synth → run-all.sh(있으면) → 라이브 스모크(배포 시)
 allowed-tools: Read, Glob, Bash(cd backend && .venv/bin/pytest:*), Bash(cd frontend && npx tsc:*), Bash(cd frontend && npm run build:*), Bash(cd infra && npx aws-cdk@2 synth:*), Bash(tests/run-all.sh:*), Bash(./scripts/smoke.sh:*), Bash(ls:*), Bash(test:*)
 ---
 
@@ -14,7 +14,7 @@ cd backend && .venv/bin/pytest tests/ -q
 ```
 
 - venv는 `backend/.venv` 고정이다. 시스템 pytest를 쓰지 않는다.
-- **판정 기준**: `94 passed`, failed/error 0. 수집 개수가 94 미만이면 통과처럼 보여도 수집 오류(import 실패 등)를 의심하고 FAIL로 다룬다.
+- **판정 기준**: `120 passed`, failed/error 0. 수집 개수가 120 미만이면 통과처럼 보여도 수집 오류(import 실패 등)를 의심하고 FAIL로 다룬다.
 
 ## Step 2: 프론트엔드 게이트
 
@@ -66,7 +66,7 @@ test -x tests/run-all.sh && tests/run-all.sh
 
 ## 오류 복구
 
-### pytest가 94개보다 적게 수집될 때
+### pytest가 120개보다 적게 수집될 때
 ```bash
 cd backend && .venv/bin/pytest tests/ -q --collect-only | tail -5
 ```

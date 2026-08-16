@@ -25,7 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add video time-series panel with a top selector, restoring the old Trends-tab drill-down flow
 - Add Netflix-style content selection: clicking any tile swaps the hero into a billboard (title, category chip, short description, YouTube link) with the video's trend charts right below
 - Add per-tile rank chips (top-left) and an unchanged "-" state to the top-right delta badges; collect a 200-character description per video for the hero synopsis
-- Add Netflix-style hover preview on tiles: short description plus a one-line AI analysis per video (generated in the same hourly batch-tagging call, 80-char sanitized); the hero billboard shows the AI line too
+- Add Netflix-style hover preview popover on tiles (portal-based, 350ms delay, precise-pointer only): thumbnail, meta, short description, per-video AI briefing line, and tag chips; the hero billboard shows the AI line too
+- Add country rankings (US/JP/GB/IN Top-20), the official YouTube Music "Top 100 Songs South Korea" weekly chart (playlist order = chart rank), and an AWS Korea channel popular-videos row; category collection deepened from Top-10 to Top-20
+- Add a Netflix-style left sidebar listing every topic (overall, surging, YT Music, AWS, AI topics/ages, categories, countries); selecting one shows its TOP 20 in the big-rank-numeral style
+- Rename the "accelerating now" row to a clearer label with an explanatory hint (hourly view growth)
+- Add token streaming for AI briefings: `GET /api/brief/stream` relays Bedrock converse-stream deltas over SSE end-to-end (Bearer-only AWS eventstream parser, no boto3), with a live pipeline trace (DynamoDB reads, cache check, prompt build, Bedrock call, cache store) rendered in the panel; truncated streams are never cached
 
 ### Changed
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
@@ -75,7 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 상단 셀렉터로 영상을 골라 추이를 보는 영상 시계열 패널 추가(구 추이 분석 탭 방식 복원)
 - 넷플릭스식 콘텐츠 선택 추가: 타일 클릭 시 히어로가 해당 콘텐츠의 빌보드(제목·카테고리 칩·간단한 소개·YouTube 링크)로 전환되고 바로 아래에 추이 차트 표시
 - 타일 좌측 상단 순위 칩과 우측 상단 델타 배지의 유지("-") 상태 추가, 히어로 소개문용 영상 설명(200자) 수집 추가
-- 타일에 넷플릭스식 hover 미리보기 추가: 간단한 소개 + 영상별 AI 한 줄 분석(시간별 배치 태깅 1콜에서 함께 생성, 80자 세탁), 히어로 빌보드에도 AI 분석 표시
+- 타일에 넷플릭스식 hover 미리보기 팝오버 추가(포털 기반, 350ms 지연, 정밀 포인터 전용): 썸네일·메타·간단한 소개·영상별 AI 브리핑 한 줄·태그 칩, 히어로 빌보드에도 AI 분석 표시
+- 국가별 랭킹(미·일·영·인 Top-20), YouTube Music 공식 주간 차트 "Top 100 Songs South Korea"(재생목록 순서 = 차트 순위), AWS Korea 채널 인기 영상 행 추가, 분야별 수집을 Top-10에서 Top-20으로 확대
+- 넷플릭스식 좌측 사이드바 추가(전체·급증·YT Music·AWS·AI 주제/연령·분야·국가) — 주제 선택 시 큰 순위 숫자 스타일의 TOP 20 뷰 표시
+- "지금 가속 중" 행을 더 읽기 쉬운 이름("조회수 급증 중")과 설명 힌트(시간당 증가 기준)로 변경
+- AI 브리핑 토큰 스트리밍 추가: `GET /api/brief/stream`이 Bedrock converse-stream 델타를 SSE로 전 구간 중계(Bearer 전용 AWS eventstream 파서, boto3 미사용), 파이프라인 트레이스(DynamoDB 조회·캐시 확인·프롬프트 구성·Bedrock 호출·캐시 저장)를 패널에 실시간 표시, 절단된 스트림은 캐시하지 않음
 
 ### Changed
 - 3탭 레이아웃을 넷플릭스형 홈으로 교체한 뒤, 기존 탭 스타일의 상단 메뉴를 재도입: 홈 / 시계열 추이 / 점유율·리포트 화면 분리(차트·LLM 브리핑은 각자 화면에서 표시)

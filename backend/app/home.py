@@ -7,6 +7,7 @@ null 안전이어야 한다(첫 스냅샷은 파생 4필드가 전원 null이다
 from datetime import datetime, timedelta
 
 from app.categories import CATEGORIES, CATEGORY_NAMES
+from app.regions import REGIONS, REGION_TITLES
 
 CATEGORY_EMOJI = {
     "10": "🎵", "20": "🎮", "24": "🎬", "25": "📰",
@@ -60,21 +61,33 @@ def merge_tags(cards, tags):
     return out
 
 
-def build_rows(all_items, cat_items):
-    """홈 행 구성. all_items/cat_items는 파생·태그 병합이 끝난 카드 목록이다.
+def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
+               chart_items=None):
+    """홈 행 구성. 인자들은 파생·태그 병합이 끝난 카드 목록이다.
 
-    순서: top10 → accel → topic(태그) → age(태그) → 분야 8행. 빈 행은 넣지 않는다.
+    순서: top10 → accel → chart(YT Music) → spotlight(AWS) → topic(태그) →
+    age(태그) → 분야 → 국가. 빈 행은 넣지 않는다. top10 행은 사이드바 주제
+    뷰(TOP 20)를 위해 20개까지 싣는다 — 홈 스트립은 프론트가 10개로 잘라
+    표시한다.
     """
     rows = []
     if all_items:
         rows.append({"kind": "top10", "title": "🔥 지금 한국 급상승 TOP 10",
-                     "items": all_items[:10]})
+                     "items": all_items[:20]})
 
     accel = [c for c in all_items if _pos_int(c.get("viewsPerHour"))]
     accel.sort(key=lambda c: (-c["viewsPerHour"], c.get("rank") or 999))
     if accel:
-        rows.append({"kind": "accel", "title": "🚀 지금 가속 중",
+        rows.append({"kind": "accel", "title": "🚀 조회수 급증 중",
                      "items": accel[:10]})
+
+    if chart_items:
+        rows.append({"kind": "chart", "title": "🎶 YouTube Music 인기곡",
+                     "items": chart_items})
+
+    if spotlight_items:
+        rows.append({"kind": "spotlight", "title": "☁️ AWS 인기 영상",
+                     "items": spotlight_items})
 
     by_topic = {}
     for c in all_items:
@@ -101,6 +114,12 @@ def build_rows(all_items, cat_items):
             title = f"{emoji} {CATEGORY_NAMES[cid]}".strip()
             rows.append({"kind": "category", "categoryId": cid,
                          "title": title, "items": cards})
+
+    for code, _name in REGIONS:
+        cards = (region_items or {}).get(code)
+        if cards:
+            rows.append({"kind": "region", "regionCode": code,
+                         "title": REGION_TITLES[code], "items": cards})
     return rows
 
 

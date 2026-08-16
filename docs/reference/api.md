@@ -7,7 +7,7 @@
 ## English
 
 ### 1. Overview
-FastAPI router layer exposing read endpoints for trending snapshots and time series, a single-call home composition endpoint and a deterministic taste quiz for the Trend Radar page, plus POST endpoints for LLM briefs/reports. Every error response follows the single contract `{"error": <Korean message>}` with a 4xx/5xx status — including validation errors, which are remapped from FastAPI's default 422 detail array.
+FastAPI router layer exposing read endpoints for trending snapshots and time series, a single-call home composition endpoint and a deterministic taste quiz for the Trend Radar page, plus LLM brief/report endpoints — POST for one-shot generation and an SSE streaming GET (`/api/brief/stream`). Every error response follows the single contract `{"error": <Korean message>}` with a 4xx/5xx status — including validation errors, which are remapped from FastAPI's default 422 detail array.
 
 ### 2. Components
 | Component | Path | Purpose |
@@ -17,8 +17,8 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 | Trending router | `backend/app/api/trending.py` | `GET /api/trending?scope=all|{catId}` (validates against `VALID_SCOPES`, derives badges via baseline), `GET /api/categories` |
 | Video history router | `backend/app/api/videos.py` | `GET /api/videos/{id}/history?hours` (default 168, range 1-720) returning `{videoId, points}` |
 | Trends router | `backend/app/api/trends.py` | `GET /api/trends/categories?hours` (default 48, range 2-96 — capped to stay inside the DynamoDB 1MB Query limit without pagination) |
-| Brief/report router | `backend/app/api/brief.py` | `POST /api/brief {scope, mode}` and `POST /api/trends/report {scope}`; cache-first generation per hour bucket; `MAX_TOKENS` per kind; Korean error map `ERR` |
-| Home/quiz router | `backend/app/api/home.py` | `GET /api/home` returning `{capturedAt, tagged (bucket has AI tags), llmEnabled (Bedrock token configured), insights (LLM-free chips), hero, rows}` composed from stored snapshots — no new collection; hero adds `tenureHours` (consecutive hourly buckets over the last 72h, gaps up to 2h count as consecutive, always >= 1) and `heroThumbnail`; rows ordered top10 -> accel -> topic (tagged, >= 3 tiles, max 4 rows) -> age (>= 3 tiles) -> category (8 rows, with `categoryId`), empty rows omitted; no snapshot -> 409 `{"error": "표시할 목록이 아직 없습니다"}`. `POST /api/quiz {mood: 힐링\|도파민, time: 낮\|심야, style: 몰입\|가볍게}` returning `{type, items}` (type from the fixed 8-combination `QUIZ_TYPES` map, items = top 10 cards; deterministic, no LLM call); invalid answer -> 400 `{"error": "잘못된 요청입니다"}`, no snapshot -> same 409; pure composition/scoring logic lives in `backend/app/home.py` |
+| Brief/report router | `backend/app/api/brief.py` | `POST /api/brief {scope, mode}` and `POST /api/trends/report {scope}`; cache-first generation per hour bucket; `MAX_TOKENS` per kind; Korean error map `ERR`. `GET /api/brief/stream?scope&mode=now\|daily\|trend` — SSE (`text/event-stream`) events `step({label, ms\|null}` pipeline trace`)` → `delta({text})`* → `done({cached, baseline?})`; errors before the stream starts keep the HTTP contract (400 invalid / 409 no snapshot·baseline / 503 `LlmDisabled` / 502 upstream — mapped by an eager first-event pull), and only post-start upstream failure is delivered as an in-band `error({error, code})` event; shares the UTC hour-bucket kind×scope cache with the POST paths (hit → "캐시 히트" step + one full-text `delta` + `done cached:true`) |
+| Home/quiz router | `backend/app/api/home.py` | `GET /api/home` returning `{capturedAt, tagged (bucket has AI tags), llmEnabled (Bedrock token configured), insights (LLM-free chips), hero, rows}` composed from stored snapshots — no new collection; hero adds `tenureHours` (consecutive hourly buckets over the last 72h, gaps up to 2h count as consecutive, always >= 1) and `heroThumbnail`; rows ordered top10 (carries up to 20 cards — the frontend trims the home strip to 10) -> accel -> chart (YouTube Music weekly chart) -> spotlight (AWS Korea channel) -> topic (tagged, >= 3 tiles, max 4 rows) -> age (>= 3 tiles) -> category (8 rows, with `categoryId`) -> region (US/JP/GB/IN, with `regionCode`), empty rows omitted; region/spotlight/chart snapshots surface only here — `/api/trending` scopes stay `all` plus the 8 categories; no snapshot -> 409 `{"error": "표시할 목록이 아직 없습니다"}`. `POST /api/quiz {mood: 힐링\|도파민, time: 낮\|심야, style: 몰입\|가볍게}` returning `{type, items}` (type from the fixed 8-combination `QUIZ_TYPES` map, items = top 10 cards; deterministic, no LLM call); invalid answer -> 400 `{"error": "잘못된 요청입니다"}`, no snapshot -> same 409; pure composition/scoring logic lives in `backend/app/home.py` |
 
 ### 3. Key Decisions
 - All errors are `{"error": Korean}` + status code; the frontend renders `body.error` directly, so no endpoint may leak FastAPI's detail array.
@@ -30,11 +30,12 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - `GET /api/home` and `POST /api/quiz` deviate from the empty-result convention: without an ALL snapshot they return 409 `{"error": "표시할 목록이 아직 없습니다"}` instead of an empty body.
 - The quiz is deterministic and LLM-free: vibe tag match +3, `MOOD_CATS`/`STYLE_CATS` category weights, rank tiebreak `(31-rank)/30`; answers are validated in-router against the fixed vocabularies and reuse the same 400 message as the global validation remap.
 - `heroThumbnail` is an assembled `i.ytimg.com` maxresdefault URL, not a stored value, so `videoId` is validated against `^[A-Za-z0-9_-]{5,20}$` and falls back to the stored `thumbnail` on mismatch.
+- The streaming endpoint splits errors by phase: before any bytes are streamed, failures return real HTTP statuses (the first Bedrock event is pulled eagerly so 503/502 can still be proper responses); once streaming has begun the status is already 200, so upstream failure becomes an in-band `error` event. In `trend` mode the cache check runs before the 48-hour range query and aggregation (the most expensive work is skipped on a hit), and text whose stream ended without `messageStop` is never cached (`if text and stop`) so a truncated response cannot poison the hour bucket; client disconnect cancels the async generator and a `finally` closes the Bedrock stream.
 
 ### 4. Code Pointers
 - `backend/app/main.py` — `create_app`, validation-error remap, router wiring
 - `backend/app/api/trending.py` — `VALID_SCOPES`, baseline-derived response
-- `backend/app/api/brief.py` — `_cached_or_generate`, `MAX_TOKENS`, `ERR`
+- `backend/app/api/brief.py` — `_cached_or_generate`, `brief_stream` (SSE), `STREAM_MODES`, `MAX_TOKENS`, `ERR`
 - `backend/app/api/deps.py` — `app.state` dependency providers
 - `backend/app/api/home.py` — `ERR_NO_SNAPSHOT`, videoId regex guard, hero/tenure assembly
 - `backend/app/home.py` — `build_rows`, `build_insights`, `tenure_hours`, `QUIZ_TYPES`, `quiz_pick`
@@ -51,7 +52,7 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 ## 한국어
 
 ### 1. 개요
-급상승 스냅샷·시계열 읽기 엔드포인트, Trend Radar 페이지를 위한 단일 호출 홈 조합 엔드포인트와 결정적 취향 퀴즈, LLM 브리핑/리포트 POST 엔드포인트를 제공하는 FastAPI 라우터 계층이다. 모든 오류 응답은 `{"error": 한국어 메시지}` + 4xx/5xx 단일 계약을 따르며, 검증 오류도 FastAPI 기본 422 detail 배열 대신 이 계약으로 재매핑한다.
+급상승 스냅샷·시계열 읽기 엔드포인트, Trend Radar 페이지를 위한 단일 호출 홈 조합 엔드포인트와 결정적 취향 퀴즈, LLM 브리핑/리포트 엔드포인트(단발 생성 POST + SSE 스트리밍 GET `/api/brief/stream`)를 제공하는 FastAPI 라우터 계층이다. 모든 오류 응답은 `{"error": 한국어 메시지}` + 4xx/5xx 단일 계약을 따르며, 검증 오류도 FastAPI 기본 422 detail 배열 대신 이 계약으로 재매핑한다.
 
 ### 2. 구성요소
 | 구성요소 | 경로 | 목적 |
@@ -61,8 +62,8 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 | 급상승 라우터 | `backend/app/api/trending.py` | `GET /api/trending?scope=all|{catId}`(`VALID_SCOPES` 검증, 기준 스냅샷으로 배지 파생), `GET /api/categories` |
 | 영상 이력 라우터 | `backend/app/api/videos.py` | `GET /api/videos/{id}/history?hours`(기본 168, 범위 1~720) — `{videoId, points}` 반환 |
 | 추이 라우터 | `backend/app/api/trends.py` | `GET /api/trends/categories?hours`(기본 48, 범위 2~96 — 페이지네이션 없이 DynamoDB 1MB Query 한도 내 안전 마진) |
-| 브리핑/리포트 라우터 | `backend/app/api/brief.py` | `POST /api/brief {scope, mode}`, `POST /api/trends/report {scope}`. 시간 버킷 단위 캐시 우선 생성, kind별 `MAX_TOKENS`, 한국어 오류 맵 `ERR` |
-| 홈/퀴즈 라우터 | `backend/app/api/home.py` | `GET /api/home` — 저장된 스냅샷만 재조합해(새 수집 없음) `{capturedAt, tagged(버킷 태그 존재 여부), llmEnabled(Bedrock 토큰 설정 여부), insights(LLM 미사용 칩), hero, rows}` 반환. hero에 `tenureHours`(최근 72h 연속 시간 버킷 수, 간격 2h까지 연속 인정, 항상 1 이상)·`heroThumbnail` 추가. rows는 top10 -> accel -> topic(태그, 3개 이상, 최대 4행) -> age(3개 이상) -> category(8행, `categoryId` 포함) 순서이고 빈 행은 생략. 스냅샷 없음 -> 409 `{"error": "표시할 목록이 아직 없습니다"}`. `POST /api/quiz {mood: 힐링\|도파민, time: 낮\|심야, style: 몰입\|가볍게}` — `{type, items}` 반환(type은 8조합 고정 `QUIZ_TYPES` 매핑, items는 상위 10 카드 — 결정적, LLM 미호출). 허용 밖 답변 -> 400 `{"error": "잘못된 요청입니다"}`, 스냅샷 없음 -> 동일 409. 순수 조합/점수 로직은 `backend/app/home.py` |
+| 브리핑/리포트 라우터 | `backend/app/api/brief.py` | `POST /api/brief {scope, mode}`, `POST /api/trends/report {scope}`. 시간 버킷 단위 캐시 우선 생성, kind별 `MAX_TOKENS`, 한국어 오류 맵 `ERR`. `GET /api/brief/stream?scope&mode=now\|daily\|trend` — SSE(`text/event-stream`) 이벤트 `step({label, ms\|null}` 파이프라인 트레이스`)` → `delta({text})`* → `done({cached, baseline?})`. 스트림 시작 전 오류는 기존 HTTP 계약 그대로(400 잘못된 요청 / 409 스냅샷·기준선 없음 / 503 `LlmDisabled` / 502 상류 — 첫 이벤트를 eager로 당겨 매핑), 시작 후 상류 실패만 in-band `error({error, code})` 이벤트로 전달. UTC 시간 버킷 kind×scope 캐시를 POST 경로와 공유(히트 시 "캐시 히트" step + 전체 텍스트 `delta` 1건 + `done cached:true`) |
+| 홈/퀴즈 라우터 | `backend/app/api/home.py` | `GET /api/home` — 저장된 스냅샷만 재조합해(새 수집 없음) `{capturedAt, tagged(버킷 태그 존재 여부), llmEnabled(Bedrock 토큰 설정 여부), insights(LLM 미사용 칩), hero, rows}` 반환. hero에 `tenureHours`(최근 72h 연속 시간 버킷 수, 간격 2h까지 연속 인정, 항상 1 이상)·`heroThumbnail` 추가. rows는 top10(최대 20개 운반 — 홈 스트립 표시는 프론트가 10개로 절단) -> accel -> chart(YouTube Music 주간 차트) -> spotlight(AWS Korea 채널) -> topic(태그, 3개 이상, 최대 4행) -> age(3개 이상) -> category(8행, `categoryId` 포함) -> region(미/일/영/인, `regionCode` 포함) 순서이고 빈 행은 생략. 국가/스포트라이트/차트 스냅샷은 여기서만 노출된다 — `/api/trending` 스코프는 `all` + 8분야 유지. 스냅샷 없음 -> 409 `{"error": "표시할 목록이 아직 없습니다"}`. `POST /api/quiz {mood: 힐링\|도파민, time: 낮\|심야, style: 몰입\|가볍게}` — `{type, items}` 반환(type은 8조합 고정 `QUIZ_TYPES` 매핑, items는 상위 10 카드 — 결정적, LLM 미호출). 허용 밖 답변 -> 400 `{"error": "잘못된 요청입니다"}`, 스냅샷 없음 -> 동일 409. 순수 조합/점수 로직은 `backend/app/home.py` |
 
 ### 3. 주요 결정
 - 모든 오류는 `{"error": 한국어}` + 상태 코드다. 프론트가 `body.error`를 그대로 렌더하므로 어떤 엔드포인트도 FastAPI detail 배열을 노출하면 안 된다.
@@ -74,11 +75,12 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - `GET /api/home`·`POST /api/quiz`는 빈 응답 규칙에서 벗어난다: ALL 스냅샷이 없으면 빈 본문 대신 409 `{"error": "표시할 목록이 아직 없습니다"}`를 반환한다.
 - 퀴즈 추천은 결정적이며 LLM을 호출하지 않는다: 태그 vibe 일치 +3, `MOOD_CATS`/`STYLE_CATS` 분야 가중치, 순위 타이브레이크 `(31-rank)/30`. 답변은 라우터에서 고정 어휘로 검증하며 전역 검증 재매핑과 동일한 400 메시지를 쓴다.
 - `heroThumbnail`은 저장값이 아니라 조립한 `i.ytimg.com` maxresdefault URL이다 — `videoId`를 `^[A-Za-z0-9_-]{5,20}$`로 검증하고 불일치 시 저장된 `thumbnail`로 폴백한다.
+- 스트리밍 엔드포인트는 오류를 국면으로 나눈다: 바이트가 흐르기 전 실패는 진짜 HTTP 상태로 돌려주고(첫 Bedrock 이벤트를 eager로 당겨 503/502를 정상 응답으로 매핑), 스트림이 시작되면 상태가 이미 200이므로 상류 실패는 in-band `error` 이벤트가 된다. `trend` 모드는 캐시 확인을 48시간 범위 조회·집계보다 먼저 수행해 히트 시 가장 비싼 작업을 생략하고, `messageStop` 없이 끝난(절단) 텍스트는 캐시하지 않아(`if text and stop`) 시간 버킷 전체가 오염되지 않는다. 클라이언트 disconnect 시 async 제너레이터가 취소되고 `finally`가 Bedrock 스트림을 닫는다.
 
 ### 4. 코드 포인터
 - `backend/app/main.py` — `create_app`, 검증 오류 재매핑, 라우터 배선
 - `backend/app/api/trending.py` — `VALID_SCOPES`, 기준 스냅샷 파생 응답
-- `backend/app/api/brief.py` — `_cached_or_generate`, `MAX_TOKENS`, `ERR`
+- `backend/app/api/brief.py` — `_cached_or_generate`, `brief_stream`(SSE), `STREAM_MODES`, `MAX_TOKENS`, `ERR`
 - `backend/app/api/deps.py` — `app.state` 의존성 공급자
 - `backend/app/api/home.py` — `ERR_NO_SNAPSHOT`, videoId 정규식 가드, 히어로/tenure 조립
 - `backend/app/home.py` — `build_rows`, `build_insights`, `tenure_hours`, `QUIZ_TYPES`, `quiz_pick`
@@ -91,4 +93,4 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 - 관련 런북: 아직 없음
 - 관련 레이어: [data.md](data.md), [agent-llm.md](agent-llm.md), [frontend.md](frontend.md)
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16

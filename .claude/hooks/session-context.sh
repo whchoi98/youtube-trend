@@ -10,7 +10,7 @@ echo "스택: Python 3.12 FastAPI(backend) / React 18+Vite+TS(frontend) / CDK Py
 echo "라이브: https://d2y73ug3aaah05.cloudfront.net (계정 종속 — 재배포 시 변동)"
 echo ""
 echo "핵심 명령:"
-echo "  백엔드 테스트: cd backend && .venv/bin/pytest tests/ -q   (94개)"
+echo "  백엔드 테스트: cd backend && .venv/bin/pytest tests/ -q   (120개)"
 echo "  프론트 게이트: cd frontend && npx tsc --noEmit && npm run build"
 echo "  CDK synth:     cd infra && npx aws-cdk@2 synth   (시스템 cdk 버전 비호환 — 반드시 npx aws-cdk@2)"
 echo "  배포:          ./scripts/deploy.sh"

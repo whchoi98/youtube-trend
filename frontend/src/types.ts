@@ -23,8 +23,16 @@ export interface Tags { topics: string[]; age: string | null; vibe: string | nul
 export interface HomeCard extends Card { tags?: Tags }
 
 /** 홈 스트립 행. 'quiz'는 클라이언트에서 퀴즈 결과로 만드는 행이다. */
-export type RowKind = 'top10' | 'accel' | 'topic' | 'age' | 'category' | 'quiz'
-export interface HomeRow { kind: RowKind; title: string; categoryId?: string; items: HomeCard[] }
+export type RowKind =
+  | 'top10' | 'accel' | 'chart' | 'spotlight' | 'topic' | 'age' | 'category'
+  | 'region' | 'quiz'
+export interface HomeRow {
+  kind: RowKind
+  title: string
+  categoryId?: string
+  regionCode?: string
+  items: HomeCard[]
+}
 
 export interface HomeHero extends HomeCard { tenureHours: number; heroThumbnail: string }
 export interface HomeData {

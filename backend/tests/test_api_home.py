@@ -172,3 +172,43 @@ def test_home_response_is_cached_within_ttl(table):
         "topics": ["먹방"], "age": "20대", "vibe": "몰입"}}, NOW)
     second = client.get("/api/home").json()
     assert second["tagged"] is False  # 캐시 히트 — 재조합하지 않았다
+
+
+def test_home_includes_region_and_spotlight_rows(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [card("video-a", 1)])
+    store.put_snapshot("rgn-US", NOW, [card("video-us", 1)])
+    store.put_snapshot("spot-aws", NOW, [card("video-aws", 1)])
+
+    body = client.get("/api/home").json()
+    rows = {r["kind"]: r for r in body["rows"]}
+
+    assert rows["region"]["regionCode"] == "US"
+    assert rows["region"]["title"] == "🇺🇸 미국은 지금"
+    assert rows["region"]["items"][0]["videoId"] == "video-us"
+    assert rows["spotlight"]["title"] == "☁️ AWS 인기 영상"
+    assert rows["spotlight"]["items"][0]["videoId"] == "video-aws"
+    # 순서: spotlight는 accel 자리(상단), region은 category 뒤(맨 뒤)
+    kinds = [r["kind"] for r in body["rows"]]
+    assert kinds.index("spotlight") < kinds.index("region")
+
+
+def test_home_top10_row_carries_up_to_twenty(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [card(f"video-{i:02d}", i) for i in range(1, 31)])
+    body = client.get("/api/home").json()
+    top = next(r for r in body["rows"] if r["kind"] == "top10")
+    assert len(top["items"]) == 20  # 사이드바 주제 뷰(TOP 20)용 — 홈은 10개로 표시
+
+
+def test_home_includes_music_chart_row(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [card("video-a", 1)])
+    store.put_snapshot("chart-ytmusic", NOW, [card("video-song", 1)])
+    body = client.get("/api/home").json()
+    rows = {r["kind"]: r for r in body["rows"]}
+    assert rows["chart"]["title"] == "🎶 YouTube Music 인기곡"
+    assert rows["chart"]["items"][0]["videoId"] == "video-song"

@@ -22,7 +22,18 @@ def hour_bucket(dt: datetime) -> str:
 
 
 def snap_pk(scope: str) -> str:
-    return "SNAP#ALL" if scope == "all" else f"SNAP#CAT#{scope}"
+    """스냅샷 스코프 → pk. 스코프 규약: "all"=전체 KR Top30,
+    "rgn-{CODE}"=국가별(예: rgn-US), "spot-{name}"=채널 스포트라이트(예: spot-aws),
+    그 외=카테고리 id."""
+    if scope == "all":
+        return "SNAP#ALL"
+    if scope.startswith("rgn-"):
+        return f"SNAP#RGN#{scope[4:]}"
+    if scope.startswith("spot-"):
+        return f"SNAP#SPOT#{scope[5:]}"
+    if scope.startswith("chart-"):
+        return f"SNAP#CHART#{scope[6:]}"
+    return f"SNAP#CAT#{scope}"
 
 
 def vid_pk(video_id: str) -> str:
