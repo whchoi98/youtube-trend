@@ -9,6 +9,9 @@ from fastapi.responses import PlainTextResponse, JSONResponse
 from app.config import Settings
 
 logging.basicConfig(level=logging.INFO, format='{"lvl":"%(levelname)s","msg":"%(message)s","logger":"%(name)s"}')
+# httpx는 INFO에서 요청 URL 전체를 남긴다 — YouTube 키가 쿼리스트링에 있어
+# 로그로 새므로 WARNING으로 올린다(시크릿은 어떤 로그에도 남기지 않는다는 규칙)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 log = logging.getLogger(__name__)
 
 
