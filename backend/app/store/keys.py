@@ -33,6 +33,8 @@ def snap_pk(scope: str) -> str:
         return f"SNAP#SPOT#{scope[5:]}"
     if scope.startswith("chart-"):
         return f"SNAP#CHART#{scope[6:]}"
+    if scope.startswith("chan-"):
+        return f"SNAP#CHAN#{scope[5:]}"
     return f"SNAP#CAT#{scope}"
 
 

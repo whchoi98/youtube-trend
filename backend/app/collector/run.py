@@ -1,7 +1,9 @@
 """수집 오케스트레이션. 부분 실패 허용 — scope 하나의 실패가 나머지를 막지 않는다."""
 import logging
 
+from app.aggregate import rank_channels
 from app.categories import CATEGORIES
+from app.charts import MUSIC_CHARTS
 from app.collector.youtube import UpstreamError
 from app.regions import REGIONS
 from app.store import keys
@@ -11,11 +13,7 @@ log = logging.getLogger(__name__)
 # 채널 스포트라이트 — AWS Korea 공식 채널 인기 영상 랭킹
 SPOTLIGHT_HANDLE = "AWSKorea"
 SPOTLIGHT_SCOPE = "spot-aws"
-# YouTube Music 공식 주간 차트 "Top 100 Songs South Korea"
-# (채널 UCrKZcyOJVWnJ60zM1XWllNw "YouTube Music Global Charts" 운영 —
-#  재생목록 순서가 곧 차트 순위. id가 회전하면 수집이 건너뛰고 행만 사라진다)
-MUSIC_CHART_PLAYLIST = "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m"
-MUSIC_CHART_SCOPE = "chart-ytmusic"
+# YouTube Music 공식 차트 목록은 app/charts.py 단일 정의를 따른다
 # 분야/국가/스포트라이트 랭킹 깊이 — 사이드바 주제 뷰가 TOP 20을 보여준다
 RANK_DEPTH = 20
 
@@ -77,15 +75,30 @@ def collect_all(store, yt, now):
         if cards and store.put_snapshot(SPOTLIGHT_SCOPE, now, cards):
             written += 1
 
-    # 5) YouTube Music 공식 차트 — 재생목록 순서 = 차트 순위
-    try:
-        cards = yt.playlist_top(MUSIC_CHART_PLAYLIST, RANK_DEPTH)
-    except UpstreamError as e:
-        log.warning("collect: music chart failed status=%s", e.status)
-        skipped.append(MUSIC_CHART_SCOPE)
-    else:
-        if cards and store.put_snapshot(MUSIC_CHART_SCOPE, now, cards):
+    # 5) YouTube Music 공식 차트 5종 — 재생목록 순서 = 차트 순위, 차트별 실패 격리
+    for suffix, playlist_id, _title in MUSIC_CHARTS:
+        scope = f"chart-{suffix}"
+        try:
+            cards = yt.playlist_top(playlist_id, RANK_DEPTH)
+        except UpstreamError as e:
+            log.warning("collect: music chart %s failed status=%s", suffix, e.status)
+            skipped.append(scope)
+            continue
+        if cards and store.put_snapshot(scope, now, cards):
             written += 1
+
+    # 6) 채널 분석 — 전체 Top30 기여 채널의 구독자·총조회수 결합 랭킹
+    chan_ids = list({c.get("channelId") for c in all_cards if c.get("channelId")})
+    if chan_ids:
+        try:
+            stats = yt.channels_stats(chan_ids)
+        except UpstreamError as e:
+            log.warning("collect: channel stats failed status=%s", e.status)
+            skipped.append("chan-top")
+        else:
+            ranking = rank_channels(all_cards, stats)
+            if ranking and store.put_snapshot("chan-top", now, ranking):
+                written += 1
 
     log.info("collect done bucket=%s written=%s skipped=%s degraded=%s",
              bucket, written, skipped, degraded)

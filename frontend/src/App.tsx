@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, fetchJson } from './api'
 import type { HomeCard, HomeData, HomeRow } from './types'
 import { formatClockKst } from './format'
@@ -6,6 +6,7 @@ import { getTheme, setTheme } from './theme'
 import { Hero } from './components/Hero'
 import { InsightChips } from './components/InsightChips'
 import { Row } from './components/Row'
+import { ChannelStrip } from './components/ChannelStrip'
 import { Sidebar, rowKey } from './components/Sidebar'
 import { TrendsPanel } from './components/TrendsPanel'
 import { VideoSeriesPanel } from './components/VideoSeriesPanel'
@@ -90,6 +91,12 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }
 
+  // '지금 뜨는 채널' 스트립을 끼울 앵커 행 — 급증 행 뒤, 없으면 TOP 10 뒤
+  const channelAnchor = useMemo(() => {
+    if (home.status !== 'ready') return 'accel'
+    return home.data.rows.some((r) => r.kind === 'accel') ? 'accel' : 'top10'
+  }, [home])
+
   // 포커스된 주제를 TOP 20 큰 순위 숫자 행으로 변환. 폴링으로 주제가
   // 사라지면 null이 되어 아래 effect가 홈으로 복귀시킨다.
   const focusRow = useMemo<HomeRow | null>(() => {
@@ -166,20 +173,24 @@ export default function App() {
                 <>
                   {quizRow && <Row row={quizRow} hint="퀴즈 맞춤" onTile={selectCard} />}
                   {home.data.rows.map((row) => (
+                    <Fragment key={rowKey(row)}>
                     <Row
-                      key={rowKey(row)}
                       row={row}
                       hint={
                         row.kind === 'topic' ? 'AI 태깅'
                           : row.kind === 'age' ? 'AI 태깅 · 추정'
                           : row.kind === 'accel' ? '시간당 증가 기준'
                             : row.kind === 'spotlight' ? 'AWS Korea 채널'
-                              : row.kind === 'chart' ? 'YouTube Music 공식 주간 차트'
+                              : row.kind === 'chart' ? 'YouTube Music 공식 차트'
                                 : undefined
                       }
                       onTile={selectCard}
                       limit={row.kind === 'top10' ? 10 : undefined}
                     />
+                    {row.kind === channelAnchor && home.data.channels && home.data.channels.length > 0 && (
+                      <ChannelStrip channels={home.data.channels} />
+                    )}
+                    </Fragment>
                   ))}
                   {!home.data.tagged && home.data.llmEnabled && (
                     <div className="msg small">AI 태깅 진행 중 — 잠시 후 주제별 행이 추가됩니다</div>

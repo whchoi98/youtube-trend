@@ -135,3 +135,20 @@ def test_playlist_top_preserves_playlist_order():
     cards = yt.playlist_top("PLchart", 20)
     assert [c["videoId"] for c in cards] == ["first", "second"]
     assert cards[0]["rank"] == 1 and cards[0]["views"] == 10
+
+
+def test_channels_stats_hidden_subscribers_are_null():
+    def handler(req):
+        assert req.url.path.endswith("/channels")
+        return httpx.Response(200, json={"items": [
+            {"id": "c1", "snippet": {"title": "공개채널", "thumbnails":
+                {"medium": {"url": "http://t/1.jpg"}}},
+             "statistics": {"subscriberCount": "1234", "viewCount": "999"}},
+            {"id": "c2", "snippet": {"title": "비공개채널", "thumbnails": {}},
+             "statistics": {"hiddenSubscriberCount": True, "viewCount": "5"}},
+        ]})
+    yt = YouTubeClient(api_key="k", client=httpx.Client(
+        transport=httpx.MockTransport(handler)))
+    out = yt.channels_stats(["c1", "c2"])
+    assert out[0]["subscribers"] == 1234 and out[0]["totalViews"] == 999
+    assert out[1]["subscribers"] is None  # 비공개 — 실측 0과 혼용 금지

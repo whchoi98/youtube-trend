@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from app import home as home_logic
 from app.api.deps import get_settings, get_store
 from app.categories import CATEGORIES
+from app.charts import MUSIC_CHARTS
 from app.derive import with_derived
 from app.regions import REGIONS
 from app.store import keys
@@ -84,8 +85,11 @@ def home(request: Request, store=Depends(get_store),
     sgot = _derived_items(store, "spot-aws", now)
     spotlight_items = home_logic.merge_tags(sgot[1], tags) if sgot else None
 
-    cgot2 = _derived_items(store, "chart-ytmusic", now)
-    chart_items = home_logic.merge_tags(cgot2[1], tags) if cgot2 else None
+    chart_items = {}
+    for suffix, _pid, _title in MUSIC_CHARTS:
+        cgot = _derived_items(store, f"chart-{suffix}", now)
+        if cgot is not None:
+            chart_items[suffix] = home_logic.merge_tags(cgot[1], tags)
 
     hero = None
     if items:
@@ -99,8 +103,11 @@ def home(request: Request, store=Depends(get_store),
             f"https://i.ytimg.com/vi/{vid}/maxresdefault.jpg"
             if _VIDEO_ID_RE.match(vid) else hero.get("thumbnail", ""))
 
+    chan_snap = store.latest_snapshot("chan-top")
+
     payload = {
         "capturedAt": snap["capturedAt"],
+        "channels": chan_snap["items"] if chan_snap else None,
         "tagged": tags is not None,
         "llmEnabled": bool(settings.bedrock_token),
         "insights": home_logic.build_insights(items),

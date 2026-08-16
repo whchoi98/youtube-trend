@@ -70,6 +70,7 @@ class YouTubeClient:
             "category": self.category_names.get(cat_id, "기타"), "categoryId": cat_id,
             "thumbnail": sn.get("thumbnails", {}).get("high", {}).get("url", ""),
             "publishedAt": sn.get("publishedAt", ""),
+            "channelId": sn.get("channelId", ""),
             # 개행·공백 정리 후 상한 — 히어로 소개문 용도라 앞부분만 필요
             "description": " ".join(
                 str(sn.get("description") or "").split())[:DESCRIPTION_MAX],
@@ -120,6 +121,31 @@ class YouTubeClient:
                             it.get("statistics", {}).get("viewCount", 0)),
                         reverse=True)[:max_results]
         return [self._card(i, it) for i, it in enumerate(ranked, start=1)]
+
+    def channels_stats(self, channel_ids):
+        """채널 통계 일괄 조회 — 50개까지 쿼터 1유닛.
+
+        구독자 수 비공개(hiddenSubscriberCount)는 None(계산 불가) — 실측 0과
+        혼용하지 않는다(파생 null 계약과 동일 규칙).
+        """
+        ids = [c for c in channel_ids if c][:50]
+        if not ids:
+            return []
+        data = self._get("channels", {
+            "part": "snippet,statistics", "id": ",".join(ids),
+            "maxResults": "50"})
+        out = []
+        for it in data.get("items", []):
+            sn, st = it.get("snippet", {}), it.get("statistics", {})
+            hidden = bool(st.get("hiddenSubscriberCount", False))
+            out.append({
+                "channelId": it.get("id", ""),
+                "name": sn.get("title", ""),
+                "thumbnail": sn.get("thumbnails", {}).get("medium", {}).get("url", ""),
+                "subscribers": None if hidden else _stat_int(st.get("subscriberCount", 0)),
+                "totalViews": _stat_int(st.get("viewCount", 0)),
+            })
+        return out
 
     def playlist_top(self, playlist_id, max_results):
         """재생목록 상위 항목을 목록 순서 그대로 랭킹으로 반환.

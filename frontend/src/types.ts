@@ -31,7 +31,23 @@ export interface HomeRow {
   title: string
   categoryId?: string
   regionCode?: string
+  chartId?: string
   items: HomeCard[]
+}
+
+/** '지금 뜨는 채널' 랭킹 항목 — 급상승 기여(합산 조회수) 기준.
+ *  subscribers는 비공개 채널이면 null이다(실측 0과 구분). */
+export interface ChannelStat {
+  rank: number
+  channelId: string
+  name: string
+  thumbnail: string
+  subscribers: number | null
+  totalViews: number | null
+  trendingCount: number
+  trendingViews: number
+  topVideoId: string
+  topVideoTitle: string
 }
 
 export interface HomeHero extends HomeCard { tenureHours: number; heroThumbnail: string }
@@ -42,6 +58,7 @@ export interface HomeData {
   insights: string[]
   hero: HomeHero | null
   rows: HomeRow[]
+  channels: ChannelStat[] | null
 }
 
 export interface QuizAnswers { mood: string; time: string; style: string }

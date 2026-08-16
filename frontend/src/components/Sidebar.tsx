@@ -11,8 +11,8 @@ export function rowKey(row: HomeRow): string {
 function sideLabel(row: HomeRow): string {
   if (row.kind === 'top10') return '전체 급상승'
   if (row.kind === 'accel') return '조회수 급증'
-  if (row.kind === 'chart') return 'YouTube Music'
-  if (row.kind === 'spotlight') return 'AWS'
+  if (row.kind === 'chart') return row.title.replace('YouTube Music · ', '')
+  if (row.kind === 'spotlight') return 'AWS Korea'
   return row.title
     .replace('은 지금', '')
     .replace('는 지금', '')
@@ -21,10 +21,12 @@ function sideLabel(row: HomeRow): string {
 
 /** 주제 묶음 — 사이드바 섹션 헤더로 표기한다. */
 const GROUPS: { label: string; kinds: RowKind[] }[] = [
-  { label: '랭킹', kinds: ['top10', 'accel', 'chart', 'spotlight'] },
+  { label: '랭킹', kinds: ['top10', 'accel'] },
+  { label: 'YouTube Music', kinds: ['chart'] },
   { label: 'AI 추천', kinds: ['topic', 'age'] },
   { label: '분야', kinds: ['category'] },
   { label: '국가', kinds: ['region'] },
+  { label: '채널', kinds: ['spotlight'] },
 ]
 
 /** 넷플릭스식 좌측 사이드바 — 주제를 고르면 그 주제의 TOP 20을 큰 순위

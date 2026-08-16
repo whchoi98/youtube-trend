@@ -22,7 +22,7 @@ YouTube 급상승 데이터의 수집·저장·파생·집계·홈 조합·AI �
 
 ## Rules
 
-- 테스트 규율: pytest + moto(DynamoDB 모킹)다. 실행은 `cd backend && .venv/bin/pytest tests/ -q`, 120개 전부 green을 유지한다. 외부 네트워크(YouTube/Bedrock 실호출)에 의존하는 테스트를 추가하지 않는다.
+- 테스트 규율: pytest + moto(DynamoDB 모킹)다. 실행은 `cd backend && .venv/bin/pytest tests/ -q`, 124개 전부 green을 유지한다. 외부 네트워크(YouTube/Bedrock 실호출)에 의존하는 테스트를 추가하지 않는다.
 - 의존성 주입은 `create_app` 시임을 통해서만 한다. 모듈 전역을 몽키패치하는 테스트를 새로 만들지 않는다.
 - 스냅샷 키 규칙은 `app/store/keys.py` 단일 정의다. 라우터·수집기·테스트 어디서도 pk/sk 문자열을 직접 조립하지 않는다. 키 포맷 변경 시 `tests/test_keys.py`부터 갱신한다.
 - 오류 계약: 모든 오류 응답은 `{"error": "<한국어 메시지>"}` + 4xx/5xx다. FastAPI 기본 detail 포맷을 노출하지 않는다.

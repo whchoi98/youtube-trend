@@ -189,9 +189,10 @@ def test_home_includes_region_and_spotlight_rows(table):
     assert rows["region"]["items"][0]["videoId"] == "video-us"
     assert rows["spotlight"]["title"] == "AWS 인기 영상"
     assert rows["spotlight"]["items"][0]["videoId"] == "video-aws"
-    # 순서: spotlight는 accel 자리(상단), region은 category 뒤(맨 뒤)
+    # 순서: AWS 스포트라이트가 맨 하단(국가 뒤)
     kinds = [r["kind"] for r in body["rows"]]
-    assert kinds.index("spotlight") < kinds.index("region")
+    assert kinds.index("region") < kinds.index("spotlight")
+    assert kinds[-1] == "spotlight"
 
 
 def test_home_top10_row_carries_up_to_twenty(table):
@@ -207,8 +208,30 @@ def test_home_includes_music_chart_row(table):
     NOW = _now()
     client, store = make_client(table)
     store.put_snapshot("all", NOW, [card("video-a", 1)])
-    store.put_snapshot("chart-ytmusic", NOW, [card("video-song", 1)])
+    store.put_snapshot("chart-songs", NOW, [card("video-song", 1)])
+    store.put_snapshot("chart-live", NOW, [card("video-live", 1)])
     body = client.get("/api/home").json()
-    rows = {r["kind"]: r for r in body["rows"]}
-    assert rows["chart"]["title"] == "YouTube Music 인기곡"
-    assert rows["chart"]["items"][0]["videoId"] == "video-song"
+    charts = [r for r in body["rows"] if r["kind"] == "chart"]
+    assert [c["chartId"] for c in charts] == ["songs", "live"]  # 정의 순서 유지
+    assert charts[0]["title"] == "YouTube Music · 인기곡 (주간)"
+    assert charts[0]["items"][0]["videoId"] == "video-song"
+
+
+def test_home_exposes_channel_ranking(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [card("video-a", 1)])
+    store.put_snapshot("chan-top", NOW, [{
+        "rank": 1, "channelId": "ch-1", "name": "채널명", "thumbnail": "",
+        "subscribers": None, "totalViews": 5, "trendingCount": 2,
+        "trendingViews": 100, "topVideoId": "video-a", "topVideoTitle": "t"}])
+    body = client.get("/api/home").json()
+    assert body["channels"][0]["name"] == "채널명"
+    assert body["channels"][0]["subscribers"] is None  # 비공개는 null 유지
+
+
+def test_home_channels_null_without_snapshot(table):
+    NOW = _now()
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [card("video-a", 1)])
+    assert client.get("/api/home").json()["channels"] is None

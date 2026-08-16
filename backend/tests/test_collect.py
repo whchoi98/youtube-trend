@@ -6,10 +6,10 @@ from app.store.table import TrendStore
 NOW = datetime(2026, 8, 4, 9, 0, tzinfo=timezone.utc)
 
 
-def card(video_id, rank, cat="10"):
-    return {"rank": rank, "videoId": video_id, "title": "t", "channel": "c",
-            "views": 10, "likes": 1, "category": "음악", "categoryId": cat,
-            "thumbnail": "", "publishedAt": ""}
+def card(video_id, rank, cat="10", views=10):
+    return {"rank": rank, "videoId": video_id, "title": "t", "channel": f"ch-{video_id}",
+            "views": views, "likes": 1, "category": "음악", "categoryId": cat,
+            "thumbnail": "", "publishedAt": "", "channelId": f"chan-{video_id}"}
 
 
 class FakeYT:
@@ -26,7 +26,7 @@ class FakeYT:
         if category_id in self.fail:
             raise UpstreamError(404)
         if category_id is None:
-            return [card("a", 1, "10"), card("b", 2, "20")]
+            return [card("a", 1, "10", views=50), card("b", 2, "20", views=10)]
         return [card(f"{category_id}-1", 1, category_id)]
 
     def channel_top(self, handle, max_results):
@@ -35,7 +35,12 @@ class FakeYT:
         return [card("aws-1", 1, "28")]
 
     def playlist_top(self, playlist_id, max_results):
-        return [card("song-1", 1, "10")]
+        return [card(f"pl-{playlist_id[:8]}", 1, "10")]
+
+    def channels_stats(self, channel_ids):
+        return [{"channelId": cid, "name": f"이름-{cid}", "thumbnail": "",
+                 "subscribers": 1000, "totalViews": 99999}
+                for cid in channel_ids]
 
 
 def test_collect_writes_all_and_categories(table):
@@ -79,7 +84,19 @@ def test_failed_region_and_spotlight_do_not_block_others(table):
     assert "rgn-JP" in result["skipped"] and "spot-aws" in result["skipped"]
 
 
-def test_collect_writes_music_chart(table):
+def test_collect_writes_all_music_charts(table):
     store = TrendStore(table)
     collect_all(store, FakeYT(), NOW)
-    assert store.latest_snapshot("chart-ytmusic")["items"][0]["videoId"] == "song-1"
+    # 5종 차트가 각자 scope로 저장된다
+    for suffix in ("songs", "mv-daily", "mv-weekly", "shorts", "live"):
+        assert store.latest_snapshot(f"chart-{suffix}") is not None
+
+
+def test_collect_writes_channel_ranking(table):
+    store = TrendStore(table)
+    collect_all(store, FakeYT(), NOW)
+    chans = store.latest_snapshot("chan-top")["items"]
+    # 합산 조회수 기준 정렬: a(50) > b(10)
+    assert chans[0]["channelId"] == "chan-a" and chans[0]["rank"] == 1
+    assert chans[0]["subscribers"] == 1000
+    assert chans[0]["topVideoId"] == "a"
