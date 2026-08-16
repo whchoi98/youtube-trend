@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add video time-series panel with a top selector, restoring the old Trends-tab drill-down flow
 - Add Netflix-style content selection: clicking any tile swaps the hero into a billboard (title, category chip, short description, YouTube link) with the video's trend charts right below
 - Add per-tile rank chips (top-left) and an unchanged "-" state to the top-right delta badges; collect a 200-character description per video for the hero synopsis
+- Add Netflix-style hover preview on tiles: short description plus a one-line AI analysis per video (generated in the same hourly batch-tagging call, 80-char sanitized); the hero billboard shows the AI line too
 
 ### Changed
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
@@ -74,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 상단 셀렉터로 영상을 골라 추이를 보는 영상 시계열 패널 추가(구 추이 분석 탭 방식 복원)
 - 넷플릭스식 콘텐츠 선택 추가: 타일 클릭 시 히어로가 해당 콘텐츠의 빌보드(제목·카테고리 칩·간단한 소개·YouTube 링크)로 전환되고 바로 아래에 추이 차트 표시
 - 타일 좌측 상단 순위 칩과 우측 상단 델타 배지의 유지("-") 상태 추가, 히어로 소개문용 영상 설명(200자) 수집 추가
+- 타일에 넷플릭스식 hover 미리보기 추가: 간단한 소개 + 영상별 AI 한 줄 분석(시간별 배치 태깅 1콜에서 함께 생성, 80자 세탁), 히어로 빌보드에도 AI 분석 표시
 
 ### Changed
 - 3탭 레이아웃을 넷플릭스형 홈으로 교체한 뒤, 기존 탭 스타일의 상단 메뉴를 재도입: 홈 / 시계열 추이 / 점유율·리포트 화면 분리(차트·LLM 브리핑은 각자 화면에서 표시)

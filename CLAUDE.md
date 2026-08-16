@@ -8,7 +8,7 @@ YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비
 
 ## Tech Stack
 
-- Backend: Python 3.12 + FastAPI (`backend/` — pytest 93개, venv는 `backend/.venv`)
+- Backend: Python 3.12 + FastAPI (`backend/` — pytest 94개, venv는 `backend/.venv`)
 - Frontend: React 18 + Vite + TypeScript (`frontend/` — recharts, react-markdown)
 - IaC: AWS CDK Python (`infra/` — 스택 `YoutubeTrendsStack`, VPC existing/new 2모드)
 - Container: Docker 멀티스테이지 (`backend/Dockerfile`, 빌드 컨텍스트 = 저장소 루트)
@@ -28,7 +28,7 @@ backend/            - FastAPI 앱 + 테스트
   app/aggregate.py  - 카테고리 집계
   app/home.py       - 홈 행 구성·인사이트·퀴즈 추천 (순수 로직)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
-  tests/            - pytest 93개 (moto 기반)
+  tests/            - pytest 94개 (moto 기반)
 frontend/           - React SPA (로고 YOUTUBE TREND MONITOR — 상단 메뉴 3화면:
                       홈 / 시계열 추이 / 점유율·리포트)
   src/components/   - Hero(선택 빌보드), Row(타일/순위 칩/배지), QuizModal, ThemeModal,
@@ -43,7 +43,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## Key Commands
 
-- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (93개)
+- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (94개)
 - 프론트 게이트: `cd frontend && npx tsc --noEmit && npm run build`
 - 배포: `./scripts/deploy.sh`
 - 스모크: `./scripts/smoke.sh <SiteUrl>`

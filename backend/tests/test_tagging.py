@@ -34,7 +34,8 @@ def test_ensure_tags_stores_and_is_idempotent(table):
     llm = FakeLlm(text='```json\n{"video-a": {"topics": ["먹방"], '
                        '"age": "20대", "vibe": "몰입"}}\n```')
     got = ensure_tags(store, llm, NOW)
-    assert got == {"video-a": {"topics": ["먹방"], "age": "20대", "vibe": "몰입"}}
+    assert got == {"video-a": {"topics": ["먹방"], "age": "20대",
+                               "vibe": "몰입", "comment": None}}
     assert store.get_tags(keys.hour_bucket(NOW)) == got
     # 같은 버킷 재호출은 LLM을 다시 태우지 않는다
     again = ensure_tags(store, llm, NOW)
@@ -73,12 +74,25 @@ def test_parse_tags_filters_vocab_and_unknown_ids():
             '"vibe": "몰입"}, "video-b": {"topics": "먹방"}}')
     got = parse_tags(text, {"video-a", "video-b"})
     # video-x는 스냅샷에 없는 id, 우주여행/90대는 어휘 밖, topics 비배열은 빈 배열
-    assert got == {"video-a": {"topics": ["먹방"], "age": None, "vibe": "심야"}}
+    assert got == {"video-a": {"topics": ["먹방"], "age": None,
+                               "vibe": "심야", "comment": None}}
 
 
 def test_parse_tags_tolerates_non_string():
     assert parse_tags(None, {"video-a"}) == {}
     assert parse_tags("[1, 2]", {"video-a"}) == {}
+
+
+def test_parse_tags_sanitizes_comment():
+    text = ('{"video-a": {"topics": [], "age": "20대", "vibe": "몰입", '
+            '"comment": "줄바꿈\\n포함  분석 ' + "가" * 100 + '"}, '
+            '"video-b": {"topics": [], "age": "20대", "vibe": "몰입", '
+            '"comment": 123}}')
+    got = parse_tags(text, {"video-a", "video-b"})
+    c = got["video-a"]["comment"]
+    assert "\n" not in c and c.startswith("줄바꿈 포함 분석")
+    assert len(c) == 80  # COMMENT_MAX 절단
+    assert got["video-b"]["comment"] is None  # 비문자열은 버린다
 
 
 def test_parse_tags_dedupes_topics_preserving_order():

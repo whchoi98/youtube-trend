@@ -14,9 +14,9 @@ React 18 + Vite + TypeScript SPA — no router (logo and page title are now "YOU
 |---|---|---|
 | App shell | `frontend/src/App.tsx` | Top bar with the `.nav-tabs` top menu (`VIEWS`/`view` state, `role="tablist"`, no router; switching scrolls to top), `/api/home` load with 60-second silent polling plus generation guard, `selected` card state (tile click swaps the hero billboard and scrolls to top), modal state, `panelKey` remount for the sub-view panels |
 | API client | `frontend/src/api.ts` | `fetchJson`/`postJson` plus `ApiError` carrying `status` and the `{error}` body from the backend contract |
-| Hero | `frontend/src/components/Hero.tsx` | Netflix-style billboard — overall #1 by default; a tile-selected card swaps in its title, category chip (`.hero-cat`), short `description` synopsis (`.hero-desc`), YouTube link, and a "✕ 1위 화면으로" clear button; maxres background `img` with per-videoId `onError` fallback, chart-in tenure hours, NEW chip, watch / quiz CTAs |
+| Hero | `frontend/src/components/Hero.tsx` | Netflix-style billboard — overall #1 by default; a tile-selected card swaps in its title, category chip (`.hero-cat`), short `description` synopsis (`.hero-desc`), YouTube link, and a "✕ 1위 화면으로" clear button; a "🤖" AI one-liner (`.hero-ai`) renders whenever the shown card has `tags.comment`; maxres background `img` with per-videoId `onError` fallback, chart-in tenure hours, NEW chip, watch / quiz CTAs |
 | Insight chips | `frontend/src/components/InsightChips.tsx` | Rule-based insight strings from `/api/home` (no LLM) |
-| Strip row | `frontend/src/components/Row.tsx` | Scroll-snap strip with hover arrows; `Tile`/`TopTile` (large rank numerals, `-webkit-text-stroke`); top-left rank chip (`.tile-rank`, accent style when rank <= 3; category rows show the within-category rank, other rows the overall rank); badges — `baseline === null` renders nothing, `prevRank === null` renders NEW, `delta` renders ▲/▼, `delta === 0` renders "–" (`badge same`), `viewsPerHour > 0` renders "+N/시" |
+| Strip row | `frontend/src/components/Row.tsx` | Scroll-snap strip with hover arrows; `Tile`/`TopTile` (large rank numerals, `-webkit-text-stroke`); top-left rank chip (`.tile-rank`, accent style when rank <= 3; category rows show the within-category rank, other rows the overall rank); hover/focus expands a Netflix-style preview (`.hover-extra` max-height 170px: stats, `HoverPreview` — 2-line-clamped `description` `.hover-desc` plus "🤖 {`tags.comment`}" `.hover-ai` — and tag chips; `TopTile` included); badges — `baseline === null` renders nothing, `prevRank === null` renders NEW, `delta` renders ▲/▼, `delta === 0` renders "–" (`badge same`), `viewsPerHour > 0` renders "+N/시" |
 | Quiz modal | `frontend/src/components/QuizModal.tsx` | 3 questions → `POST /api/quiz` → type name plus a `kind='quiz'` row inserted at the top of the home rows |
 | Theme modal | `frontend/src/components/ThemeModal.tsx` | 10 theme swatches from `src/themes.ts` |
 | Selected trend | `frontend/src/components/SelectedTrend.tsx` | "선택한 콘텐츠 추이" panel right under the hero — rank/views charts for the selected card; empty history shows a notice (only videos that entered the overall Top 30 are recorded) |
@@ -26,7 +26,7 @@ React 18 + Vite + TypeScript SPA — no router (logo and page title are now "YOU
 | Trends panel | `frontend/src/components/TrendsPanel.tsx` | Category share stacked `AreaChart` plus entered/exited `BarChart` (`hours=48`) |
 | Brief panel | `frontend/src/components/BriefPanel.tsx` | LLM brief/report, react-markdown render (logic unchanged from before the redesign) |
 | Modal shell | `frontend/src/components/Modal.tsx` | Shared shell — backdrop click or Escape closes |
-| Contract types | `frontend/src/types.ts` | `Card`/`HomeCard`/`HomeRow`/`HomeHero`/`HomeData`/`QuizAnswers`/`QuizResult` plus `Category`/`HistoryPoint`/`TrendBucket`/`Loadable` (nullable derived fields; optional `description` — absent on snapshots stored before the field was introduced) |
+| Contract types | `frontend/src/types.ts` | `Card`/`HomeCard`/`HomeRow`/`HomeHero`/`HomeData`/`QuizAnswers`/`QuizResult` plus `Category`/`HistoryPoint`/`TrendBucket`/`Loadable` (nullable derived fields; optional `description` and `Tags.comment` — absent on snapshots/tag buckets stored before each field was introduced) |
 | Formatting | `frontend/src/format.ts` | `formatCount` (Korean 만/억 abbreviation), `formatTsKst` (UTC hour bucket to KST wall clock), `formatClockKst` (ISO to KST HH:MM), `youtubeUrl` |
 | Theme state | `frontend/src/theme.ts` | `getTheme`/`setTheme` over `documentElement.dataset.theme` + localStorage `yt-theme`; first paint handled by an `index.html` bootstrap script |
 | Chart colors | `frontend/src/chartColors.ts` | Theme-independent fixed 8-color palette (slot-bound) — recharts does not reliably apply CSS `var()` to SVG fill/stroke |
@@ -34,6 +34,7 @@ React 18 + Vite + TypeScript SPA — no router (logo and page title are now "YOU
 ### 3. Key Decisions
 - No router: the tab-style top menu (`.nav-tabs`/`.nav-tab.active` accent underline, `role="tablist"`) switches the three views through the single `VIEWS`/`view` state in `App.tsx`, scrolling to top on every switch; sub views render inside a `.page` container (class renamed from `.bottom`). The home view is composed from one `GET /api/home` response; the quiz row is the only client-made row (`kind='quiz'`).
 - Tile clicks select content instead of opening a modal (`DetailModal.tsx` was deleted): `App.tsx` keeps a `selected` state, the hero becomes a Netflix-style billboard for the selected card, the page scrolls to top, and the "선택한 콘텐츠 추이" panel (`SelectedTrend`) appears right under the hero; "✕ 1위 화면으로" clears the selection back to the overall #1.
+- Optional card fields degrade gracefully: a card without `description` (pre-field snapshot) or `tags.comment` (pre-field tag bucket) simply omits the corresponding hover-preview / hero line — no placeholder.
 - `/api/home` is polled every 60 seconds in silent mode, regardless of the active view. A generation token (a sequence ref captured per request) discards late responses; a failed silent poll keeps the current screen instead of showing an error. This generation-token race guard must be kept on any new async-fetch-then-setState code.
 - Loading/error/ready are modeled as a discriminated union (`HomeState`) — no boolean flag combinations.
 - `ApiError` surfaces the backend's Korean `error` message directly; fallbacks are local Korean strings.
@@ -70,9 +71,9 @@ React 18 + Vite + TypeScript SPA다. 라우터는 없고(로고·페이지 타�
 |---|---|---|
 | 앱 셸 | `frontend/src/App.tsx` | 톱바 + `.nav-tabs` 상단 메뉴(`VIEWS`/`view` 상태, `role="tablist"`, 라우터 없음. 전환 시 최상단 스크롤), `/api/home` 로드(60초 silent 폴링 + 세대 가드), `selected` 카드 상태(타일 클릭 → 히어로 빌보드 전환 + 최상단 스크롤), 모달 상태, 서브 화면 패널 `panelKey` 리마운트 |
 | API 클라이언트 | `frontend/src/api.ts` | `fetchJson`/`postJson`과 백엔드 계약의 `{error}` 본문·`status`를 싣는 `ApiError` |
-| 히어로 | `frontend/src/components/Hero.tsx` | 넷플릭스식 빌보드 — 기본은 전체 1위, 타일 선택 시 그 카드의 제목·카테고리 칩(`.hero-cat`)·간단한 소개 `description`(`.hero-desc`)·YouTube 링크·"✕ 1위 화면으로" 해제 버튼으로 전환. maxres 배경 `img` + videoId 단위 `onError` 폴백, 차트인 시간, NEW 칩, 보러가기/내 취향 찾기 |
+| 히어로 | `frontend/src/components/Hero.tsx` | 넷플릭스식 빌보드 — 기본은 전체 1위, 타일 선택 시 그 카드의 제목·카테고리 칩(`.hero-cat`)·간단한 소개 `description`(`.hero-desc`)·YouTube 링크·"✕ 1위 화면으로" 해제 버튼으로 전환. 표시 중인 카드에 `tags.comment`가 있으면 "🤖" AI 한 줄 분석(`.hero-ai`)을 렌더. maxres 배경 `img` + videoId 단위 `onError` 폴백, 차트인 시간, NEW 칩, 보러가기/내 취향 찾기 |
 | 인사이트 칩 | `frontend/src/components/InsightChips.tsx` | `/api/home`의 규칙 기반 인사이트 문자열(LLM 미사용) |
-| 스트립 행 | `frontend/src/components/Row.tsx` | 스크롤 스냅 스트립 + hover 화살표. `Tile`/`TopTile`(큰 순위 숫자, `-webkit-text-stroke`). 좌상단 순위 칩(`.tile-rank`, rank <= 3이면 액센트 스타일 — 분야 행은 분야 내 순위, 나머지 행은 전체 순위). 배지 — `baseline === null`이면 미렌더, `prevRank === null`이면 NEW, `delta`는 ▲/▼, `delta === 0`이면 "–"(`badge same`), `viewsPerHour > 0`이면 "+N/시" |
+| 스트립 행 | `frontend/src/components/Row.tsx` | 스크롤 스냅 스트립 + hover 화살표. `Tile`/`TopTile`(큰 순위 숫자, `-webkit-text-stroke`). 좌상단 순위 칩(`.tile-rank`, rank <= 3이면 액센트 스타일 — 분야 행은 분야 내 순위, 나머지 행은 전체 순위). hover/focus 시 넷플릭스식 미리보기 펼침(`.hover-extra` max-height 170px: 지표, `HoverPreview` — `description` 2줄 클램프 `.hover-desc` + "🤖 {`tags.comment`}" `.hover-ai` — 태그 칩. `TopTile`에도 동일). 배지 — `baseline === null`이면 미렌더, `prevRank === null`이면 NEW, `delta`는 ▲/▼, `delta === 0`이면 "–"(`badge same`), `viewsPerHour > 0`이면 "+N/시" |
 | 퀴즈 모달 | `frontend/src/components/QuizModal.tsx` | 3문항 → `POST /api/quiz` → 유형명 + 홈 행 상단에 `kind='quiz'` 행 삽입 |
 | 테마 모달 | `frontend/src/components/ThemeModal.tsx` | `src/themes.ts` 기반 10종 스와치 |
 | 선택 콘텐츠 추이 | `frontend/src/components/SelectedTrend.tsx` | 히어로 바로 아래 "선택한 콘텐츠 추이" 패널 — 선택 카드의 순위/조회수 차트. 시계열 없으면 안내(전체 Top30 진입 영상만 기록) |
@@ -82,7 +83,7 @@ React 18 + Vite + TypeScript SPA다. 라우터는 없고(로고·페이지 타�
 | 추이 패널 | `frontend/src/components/TrendsPanel.tsx` | 점유율 스택 `AreaChart` + 진입/이탈 `BarChart`(`hours=48`) |
 | 브리핑 패널 | `frontend/src/components/BriefPanel.tsx` | LLM 브리핑/리포트, react-markdown 렌더(개편 전 로직 유지) |
 | 모달 셸 | `frontend/src/components/Modal.tsx` | 공통 셸 — 배경 클릭/Escape로 닫기 |
-| 계약 타입 | `frontend/src/types.ts` | `Card`/`HomeCard`/`HomeRow`/`HomeHero`/`HomeData`/`QuizAnswers`/`QuizResult` + `Category`/`HistoryPoint`/`TrendBucket`/`Loadable`(파생 필드 nullable, `description`은 optional — 도입 이전 스냅샷에는 없음) |
+| 계약 타입 | `frontend/src/types.ts` | `Card`/`HomeCard`/`HomeRow`/`HomeHero`/`HomeData`/`QuizAnswers`/`QuizResult` + `Category`/`HistoryPoint`/`TrendBucket`/`Loadable`(파생 필드 nullable, `description`·`Tags.comment`는 optional — 각 필드 도입 이전 스냅샷/태그 버킷에는 없음) |
 | 포매팅 | `frontend/src/format.ts` | `formatCount`(만/억 축약), `formatTsKst`(UTC 시 버킷 → KST 벽시계), `formatClockKst`(ISO → KST HH:MM), `youtubeUrl` |
 | 테마 상태 | `frontend/src/theme.ts` | `documentElement.dataset.theme` + localStorage `yt-theme` 기반 `getTheme`/`setTheme`. 첫 페인트는 `index.html` 부트스트랩 스크립트가 처리 |
 | 차트 색 | `frontend/src/chartColors.ts` | 테마 무관 고정 8색 팔레트(슬롯 귀속) — recharts는 SVG fill/stroke에 CSS `var()`를 안정적으로 반영하지 않는다 |
@@ -90,6 +91,7 @@ React 18 + Vite + TypeScript SPA다. 라우터는 없고(로고·페이지 타�
 ### 3. 주요 결정
 - 라우터가 없다: 기존 탭 스타일 상단 메뉴(`.nav-tabs`/`.nav-tab.active` 액센트 언더라인, `role="tablist"`)가 `App.tsx`의 `VIEWS`/`view` 상태 하나로 3화면을 전환하고, 전환 시마다 최상단으로 스크롤한다. 서브 화면은 `.page` 컨테이너(구 `.bottom`에서 개명)에 렌더한다. 홈 화면은 `GET /api/home` 응답 하나로 조합되고, 퀴즈 행(`kind='quiz'`)만 클라이언트가 만든다.
 - 타일 클릭은 모달이 아니라 콘텐츠 선택이다(`DetailModal.tsx` 삭제): `App.tsx`가 `selected` 상태를 들고, 히어로가 선택 카드의 넷플릭스식 빌보드로 바뀌며, 페이지가 최상단으로 스크롤되고, 히어로 바로 아래 "선택한 콘텐츠 추이" 패널(`SelectedTrend`)이 나타난다. "✕ 1위 화면으로"가 선택을 해제해 전체 1위로 되돌린다.
+- 카드의 optional 필드는 우아하게 강등된다: `description` 없는 카드(도입 이전 스냅샷)나 `tags.comment` 없는 카드(도입 이전 태그 버킷)는 해당 hover 미리보기/히어로 줄만 생략한다 — 플레이스홀더 없음.
 - `/api/home`은 활성 화면과 무관하게 60초마다 silent 모드로 폴링한다. 요청 시점에 캡처한 세대 토큰(시퀀스 ref)이 늦게 도착한 응답을 폐기하고, silent 폴링 실패는 오류 표시 대신 기존 화면을 유지한다. 비동기 fetch 후 setState 하는 코드를 추가할 때 이 세대 토큰 레이스 가드 패턴을 유지한다.
 - 로딩/오류/준비 상태를 판별 유니온(`HomeState`)으로 모델링한다 — 불리언 플래그 조합을 쓰지 않는다.
 - `ApiError`는 백엔드의 한국어 `error` 메시지를 그대로 노출하고, 폴백도 로컬 한국어 문구다.
@@ -115,4 +117,4 @@ React 18 + Vite + TypeScript SPA다. 라우터는 없고(로고·페이지 타�
 - 관련 런북: 아직 없음
 - 관련 레이어: [ui.md](ui.md), [api.md](api.md), [infrastructure.md](infrastructure.md)(정적 서빙)
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16

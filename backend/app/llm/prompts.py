@@ -77,11 +77,12 @@ def build_tags(cards):
     user = (
         "다음은 현재 YouTube 한국 급상승 영상 목록이다(형식: videoId: 제목 — 채널 (분야)).\n"
         + "\n".join(lines) +
-        "\n\n각 영상을 아래 고정 어휘로만 태깅해 JSON 객체 하나로 답하라.\n"
+        "\n\n각 영상을 태깅해 JSON 객체 하나로 답하라. topics/age/vibe는 아래 고정 어휘만 쓴다.\n"
         f"- topics: {', '.join(TOPIC_VOCAB)} 중 0~2개 배열 (해당 없으면 빈 배열)\n"
         f"- age: 주 시청 연령 추정 — {', '.join(AGE_VOCAB)} 중 1개\n"
         f"- vibe: 시청 무드 — {', '.join(VIBE_VOCAB)} 중 가장 어울리는 1개\n"
-        '출력 형식: {"<videoId>": {"topics": [], "age": "", "vibe": ""}, ...}'
+        "- comment: 이 영상이 왜 급상승 중인지 짚는 한 줄 분석, 40자 이내 한국어 평서문\n"
+        '출력 형식: {"<videoId>": {"topics": [], "age": "", "vibe": "", "comment": ""}, ...}'
     )
     return TAGS_SYSTEM, user
 

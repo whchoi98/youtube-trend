@@ -38,6 +38,17 @@ function TagChips({ card }: { card: HomeCard }) {
   )
 }
 
+/** hover 시 펼쳐지는 넷플릭스식 미리보기 — 간단한 소개 + AI 한 줄 분석. */
+function HoverPreview({ card }: { card: HomeCard }) {
+  const comment = card.tags?.comment
+  return (
+    <>
+      {card.description && <span className="hover-desc">{card.description}</span>}
+      {comment && <span className="hover-ai">🤖 {comment}</span>}
+    </>
+  )
+}
+
 function Thumb({ card }: { card: HomeCard }) {
   const [failed, setFailed] = useState(false)
   if (failed || !card.thumbnail) return <div className="thumb-fallback" aria-hidden="true" />
@@ -57,6 +68,7 @@ function Tile({ card, onOpen }: { card: HomeCard; onOpen: (c: HomeCard) => void 
           <span className="n">
             조회 {formatCount(card.views)}<Velocity card={card} /> · 좋아요 {formatCount(card.likes)}
           </span>
+          <HoverPreview card={card} />
           <TagChips card={card} />
         </span>
       </span>
@@ -80,6 +92,10 @@ function TopTile({ card, index, onOpen }: {
           <span className="t">{card.title}</span>
           <span className="c">
             {card.channel} · {formatCount(card.views)}<Velocity card={card} />
+          </span>
+          <span className="hover-extra">
+            <HoverPreview card={card} />
+            <TagChips card={card} />
           </span>
         </span>
       </span>

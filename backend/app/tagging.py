@@ -12,9 +12,11 @@ from app.llm.bedrock import LlmDisabled, LlmUpstreamError
 
 log = logging.getLogger(__name__)
 
-# 30개 영상 × 엔트리당 ~50토큰에 여유를 둔 상한. 잘리면 JSON 파싱이 실패해
-# 저장하지 않고 다음 사이클에 재시도한다.
-TAGS_MAX_TOKENS = 2400
+# 30개 영상 × 엔트리당 ~90토큰(태그 3종 + 한 줄 분석)에 여유를 둔 상한.
+# 잘리면 JSON 파싱이 실패해 저장하지 않고 다음 사이클에 재시도한다.
+TAGS_MAX_TOKENS = 4000
+# comment(한 줄 AI 분석) 길이 상한 — LLM 자유 텍스트라 반드시 자른다
+COMMENT_MAX = 80
 
 
 def _norm_tags(raw, valid_ids):
@@ -33,8 +35,13 @@ def _norm_tags(raw, valid_ids):
             if isinstance(raw_topics, list) else []
         age = t.get("age") if t.get("age") in prompts.AGE_VOCAB else None
         vibe = t.get("vibe") if t.get("vibe") in prompts.VIBE_VOCAB else None
-        if topics or age or vibe:
-            out[vid] = {"topics": topics, "age": age, "vibe": vibe}
+        # comment는 고정 어휘가 아닌 자유 텍스트 — 개행 제거 + 길이 상한 세탁
+        raw_comment = t.get("comment")
+        comment = prompts.clean_text(raw_comment, COMMENT_MAX) or None \
+            if isinstance(raw_comment, str) else None
+        if topics or age or vibe or comment:
+            out[vid] = {"topics": topics, "age": age, "vibe": vibe,
+                        "comment": comment}
     return out
 
 

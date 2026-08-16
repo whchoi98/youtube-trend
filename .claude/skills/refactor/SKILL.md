@@ -38,7 +38,7 @@ description: 동작을 바꾸지 않고 코드 구조를 개선한다. 리팩토
 ### 1. 분석
 - 대상 코드와 그 테스트를 파악한다
 - 호출자와 의존 관계를 모두 나열한다
-- backend는 pytest 93개가 커버하는지 확인한다. frontend/infra는 **테스트가 없다** — 동작 보존을 기계적으로 증명할 수 없으므로 단계를 더 잘게 나누고, 가능하면 backend 쪽에 계약 테스트를 먼저 추가한다
+- backend는 pytest 94개가 커버하는지 확인한다. frontend/infra는 **테스트가 없다** — 동작 보존을 기계적으로 증명할 수 없으므로 단계를 더 잘게 나누고, 가능하면 backend 쪽에 계약 테스트를 먼저 추가한다
 
 ### 2. 계획
 사용자에게 제시한다:
@@ -49,7 +49,7 @@ description: 동작을 바꾸지 않고 코드 구조를 개선한다. 리팩토
 ### 3. 실행
 - 작고 검증 가능한 단계로 진행한다
 - 매 단계 표면별 검증을 돌린다:
-  - backend: `cd backend && .venv/bin/pytest tests/ -q` (93 passed 유지)
+  - backend: `cd backend && .venv/bin/pytest tests/ -q` (94 passed 유지)
   - frontend: `cd frontend && npx tsc --noEmit && npm run build`
   - infra: `cd infra && npx aws-cdk@2 synth` + 논리 ID 비교
 - 커밋은 원자적으로 유지한다

@@ -51,6 +51,7 @@ export function Hero({ hero, selected, onQuiz, onClear }: {
         </div>
         <h1 className="hero-title">{card.title}</h1>
         {card.description && <p className="hero-desc">{card.description}</p>}
+        {card.tags?.comment && <p className="hero-ai">🤖 {card.tags.comment}</p>}
         <div className="hero-meta">
           {card.channel} · 조회 {formatCount(card.views)}{vph} · 좋아요 {formatCount(card.likes)}
         </div>

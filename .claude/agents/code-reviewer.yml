@@ -9,7 +9,7 @@ color: green
 # 1. CLAUDE.md와 .claude/skills/code-review/SKILL.md에서 프로젝트 규약을 읽는다
 # 2. 변경분 확보 (git diff, 없으면 git diff --cached, 지정 시 해당 범위)
 # 3. 표면별 리뷰 강도 배분:
-#    - backend/ (FastAPI, pytest 93개 존재): 테스트가 못 잡는 것에 집중 —
+#    - backend/ (FastAPI, pytest 94개 존재): 테스트가 못 잡는 것에 집중 —
 #      API 오류 계약, DynamoDB pk/sk·TTL, YouTube/Bedrock 호출 오류 경로, 캐시 키 설계
 #    - frontend/ (tsc+build만) · infra/ (synth만): 단위 테스트 없음 —
 #      런타임 로직을 정독. infra는 construct 논리 ID 변경(리소스 교체) 여부 필수 확인
