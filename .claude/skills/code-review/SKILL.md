@@ -17,7 +17,7 @@ description: 변경분을 신뢰도 점수 기반으로 리뷰한다. 코드 리
 
 | 표면 | 자동 검증 | 리뷰 초점 |
 |---|---|---|
-| `backend/` (Python 3.12 + FastAPI) | pytest 130개 (`cd backend && .venv/bin/pytest tests/ -q`) | 테스트가 못 잡는 것: API 오류 계약, DynamoDB pk/sk·TTL 설계, YouTube/Bedrock 외부 호출 오류 경로, 캐시 키 설계 |
+| `backend/` (Python 3.12 + FastAPI) | pytest 131개 (`cd backend && .venv/bin/pytest tests/ -q`) | 테스트가 못 잡는 것: API 오류 계약, DynamoDB pk/sk·TTL 설계, YouTube/Bedrock 외부 호출 오류 경로, 캐시 키 설계 |
 | `frontend/` (React 18 + Vite + TS) | `npx tsc --noEmit && npm run build` — **타입 검사와 빌드뿐, 단위 테스트 없음** | 런타임 로직 오류는 리뷰가 유일하게 잡는다. recharts 데이터 변환, react-markdown 입력 처리, API 응답 `{"error"}` 분기 처리를 정독한다 |
 | `infra/` (CDK Python) | `cd infra && npx aws-cdk@2 synth` — **synth 통과 = 문법 확인일 뿐** | construct 논리 ID 변경(리소스 교체 유발), SG/prefix list(pl-22a6434b)·X-Origin-Verify 헤더 방어 유지, DynamoDB 테이블 교체 여부 |
 
@@ -50,7 +50,7 @@ description: 변경분을 신뢰도 점수 기반으로 리뷰한다. 코드 리
 ### 코드 품질
 - 중복과 불필요한 복잡도
 - 누락된 핵심 오류 처리
-- backend 변경인데 테스트 추가/수정이 없는 경우 (130개 기준선 유지)
+- backend 변경인데 테스트 추가/수정이 없는 경우 (131개 기준선 유지)
 - frontend 접근성
 
 ## 신뢰도 점수

@@ -133,6 +133,10 @@ def create_app(settings: Settings, store=None, yt=None, llm=None) -> FastAPI:
             full = os.path.realpath(os.path.join(base, path))
             # base 밖으로 탈출한 경로는 파일이 존재해도 서빙하지 않는다(SPA 폴백으로)
             if path and full.startswith(base + os.sep) and os.path.isfile(full):
+                # 서비스 워커는 재검증 강제 — CloudFront 24h 캐시에 붙잡히면
+                # PWA 업데이트(새 배포 반영)가 최대 하루 지연된다
+                if path in ("sw.js", "manifest.webmanifest"):
+                    return FileResponse(full, headers={"Cache-Control": "no-cache"})
                 return FileResponse(full)
             # index.html은 캐시 재검증 강제 — CloudFront가 24h TTL로 붙잡으면
             # 재배포 후 낡은 index가 사라진 해시 자산을 참조해 사이트가 깨진다

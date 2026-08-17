@@ -12,7 +12,7 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 ### 2. Components
 | Component | Path | Purpose |
 |---|---|---|
-| App factory / error contract | `backend/app/main.py` | `create_app` factory; `RequestValidationError` handler returns `{"error": "잘못된 요청입니다"}` + 400; router registration; `/healthz`; SPA catch-all keeps unregistered `/api/*` at 404 JSON |
+| App factory / error contract | `backend/app/main.py` | `create_app` factory; `RequestValidationError` handler returns `{"error": "잘못된 요청입니다"}` + 400; router registration; `/healthz`; SPA catch-all keeps unregistered `/api/*` at 404 JSON and serves `sw.js`/`manifest.webmanifest` with `Cache-Control: no-cache` (same rationale as `index.html` — CloudFront's 24h cache must not delay PWA updates) |
 | Dependency providers | `backend/app/api/deps.py` | `get_settings`/`get_store`/`get_yt`/`get_llm` read from `app.state` — tests inject fakes through `create_app(...)` arguments |
 | Trending router | `backend/app/api/trending.py` | `GET /api/trending?scope=all|{catId}` (validates against `VALID_SCOPES`, derives badges via baseline), `GET /api/categories` |
 | Video history router | `backend/app/api/videos.py` | `GET /api/videos/{id}/history?hours` (default 168, range 1-720) returning `{videoId, points}` |
@@ -60,7 +60,7 @@ FastAPI router layer exposing read endpoints for trending snapshots and time ser
 ### 2. 구성요소
 | 구성요소 | 경로 | 목적 |
 |---|---|---|
-| 앱 팩토리·오류 계약 | `backend/app/main.py` | `create_app` 팩토리. `RequestValidationError` 핸들러가 `{"error": "잘못된 요청입니다"}` + 400 반환. 라우터 등록, `/healthz`, 미등록 `/api/*`를 404 JSON으로 유지하는 SPA catch-all |
+| 앱 팩토리·오류 계약 | `backend/app/main.py` | `create_app` 팩토리. `RequestValidationError` 핸들러가 `{"error": "잘못된 요청입니다"}` + 400 반환. 라우터 등록, `/healthz`, 미등록 `/api/*`를 404 JSON으로 유지하는 SPA catch-all — `sw.js`/`manifest.webmanifest`는 `Cache-Control: no-cache`로 서빙한다(`index.html`과 같은 근거 — CloudFront 24h 캐시가 PWA 업데이트를 지연시키지 않도록) |
 | 의존성 공급자 | `backend/app/api/deps.py` | `get_settings`/`get_store`/`get_yt`/`get_llm`이 `app.state`에서 읽는다 — 테스트는 `create_app(...)` 인자로 페이크를 주입한다 |
 | 급상승 라우터 | `backend/app/api/trending.py` | `GET /api/trending?scope=all|{catId}`(`VALID_SCOPES` 검증, 기준 스냅샷으로 배지 파생), `GET /api/categories` |
 | 영상 이력 라우터 | `backend/app/api/videos.py` | `GET /api/videos/{id}/history?hours`(기본 168, 범위 1~720) — `{videoId, points}` 반환 |

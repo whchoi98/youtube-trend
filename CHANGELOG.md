@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a 24h / 1-week / 1-month period toggle to both time-series panels; chart series now read per-song points written at collection time (CVID# items), raising the chart history window from 72h to 720h with far cheaper queries
 - Embed the NanumSquare webfont (self-hosted woff2, weights 400/700/800, font-display swap) for better Korean readability
 
+- Add PWA support for iPhone/iPad home-screen install: web app manifest, generated app icons (180/192/512 incl. maskable), apple-touch meta tags, safe-area insets for the notch, and a conservative service worker (hashed assets cache-first, navigations network-first, API never cached); sw.js and the manifest are served with no-cache so updates roll out immediately
+
 ### Changed
 - Refine the UI toward a more premium look: emoji removed from row titles, insights, sidebar, and buttons in favor of gradient accent bars on headings, sidebar section headers, and a small "AI" text chip
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
@@ -107,6 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 두 시계열 패널에 24시간/일주일/한 달 기간 토글 추가, 차트 시계열은 수집 시 적재하는 곡별 포인트(CVID#)를 읽도록 전환해 조회 창을 72시간→720시간으로 확장(쿼리 비용도 대폭 절감)
 - 나눔스퀘어 웹폰트 임베딩(자체 호스팅 woff2, 400/700/800, font-display swap)으로 한글 가독성 개선
+
+- 아이폰/아이패드 홈 화면 설치용 PWA 지원 추가: 웹 앱 매니페스트, 생성한 앱 아이콘(180/192/512, maskable 포함), apple-touch 메타, 노치 안전 영역(safe-area), 보수적 서비스 워커(해시 자산 cache-first, 내비게이션 network-first, API 미캐시). sw.js·매니페스트는 no-cache로 서빙해 업데이트 즉시 반영
 
 ### Changed
 - UI 고급화: 행 제목·인사이트·사이드바·버튼의 이모지를 제거하고 제목 그라디언트 액센트 바, 사이드바 섹션 헤더, "AI" 텍스트 칩으로 대체

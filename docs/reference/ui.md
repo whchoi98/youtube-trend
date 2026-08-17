@@ -41,7 +41,7 @@ Screen composition (the top menu switches three views; items 2-5 form the "홈" 
 | Trends panel | `frontend/src/components/TrendsPanel.tsx` | Category share stacked AreaChart + entered/exited BarChart (`hours=48`) |
 | Brief panel | `frontend/src/components/BriefPanel.tsx` | Three-button LLM panel (`오늘의 브리핑`/`어제와 비교`/`추이 리포트`) streaming from `GET /api/brief/stream`: pipeline trace (`.brief-steps` — running ⋯ / done ✓ / failed ✗ plus ms), rAF-batched markdown streaming, partial-result warning (`.brief-error`) on in-band error, 503 lock (`.brief-locked`); LLM text renders as markdown, status/error strings as plain text |
 | Modal shell | `frontend/src/components/Modal.tsx` | Shared dialog: `role="dialog"`, backdrop click and Escape close |
-| Style tokens | `frontend/src/styles.css` | 10 `[data-theme]` CSS variable sets (default `neon-hunter`; `cotton-candy` is the light theme) plus derived aliases (`--bg-elevated`, `--border`, …); gradient accent bars on headings (`.row h2::before`/`.panel h2::before`, 3px accent→accent2) and the shared `.ai-chip` text chip; self-hosted NanumSquare `@font-face` trio (R=400, B=500-700, EB=800-900, `font-display: swap`) heads the `font-family` stack |
+| Style tokens | `frontend/src/styles.css` | 10 `[data-theme]` CSS variable sets (default `neon-hunter`; `cotton-candy` is the light theme) plus derived aliases (`--bg-elevated`, `--border`, …); gradient accent bars on headings (`.row h2::before`/`.panel h2::before`, 3px accent→accent2) and the shared `.ai-chip` text chip; self-hosted NanumSquare `@font-face` trio (R=400, B=500-700, EB=800-900, `font-display: swap`) heads the `font-family` stack; safe-area insets for standalone PWA display (`.topbar` `padding-top: max(12px, env(safe-area-inset-top))`, `body` `padding-bottom: env(safe-area-inset-bottom)`) |
 | Chart palette | `frontend/src/chartColors.ts` | Fixed theme-independent 8-color palette; `seriesAccent`, `enteredColor`/`exitedColor` |
 | Theme switch | `frontend/src/theme.ts`, `frontend/src/themes.ts` | `data-theme` on the root element + localStorage `yt-theme`; swatch hex copies live in `themes.ts` (kept in sync with `styles.css`); graceful no-op when localStorage is unavailable |
 
@@ -64,6 +64,7 @@ Chart inventory (all recharts):
 - The sidebar and the focus view add no new visual language: sidebar entries are short labels stripped from the row titles (`sideLabel`), and the focus view reuses the `top10` big-numeral row style for any topic's TOP 20 — one strip layout serves both home and focus.
 - The UI is emoji-free by design: backend row titles ship plain text ("지금 한국 급상승 TOP 10", "조회수 급증 중", "오늘 첫 진입", "순위 역주행", the five "YouTube Music · …" chart titles, "힐링이 필요할 때"/"도파민 충전소", the "{name} 인기 영상" spotlight titles, category names verbatim, "미국은 지금" — the "추정" qualifier lives in the AI-row hint, not the title), insight chips carry no emoji, and frontend labels ("테마", "내 취향 찾기", "홈", the tagging notice) dropped theirs. Visual anchoring moved to the gradient heading bars, the `.side-head` group headers, and the `.ai-chip` text chip ("AI" on the hero line, "AI 브리핑" in the popover — `.pv-ai-label` was removed).
 - Typography is the self-hosted NanumSquare webfont: three woff2 files in `src/assets/fonts/` mapped to weights 400/500-700/800-900 with `font-display: swap` (system fonts show first, then swap), bundled by Vite as hashed assets — no external font CDN inside the CloudFront/ALB boundary. The Naver Nanum font license permits web embedding.
+- The page works as an installed PWA (iPhone/iPad home screen): standalone display with a `black-translucent` status bar and `viewport-fit=cover`, so the topbar and body carry safe-area insets to keep content clear of the notch and home indicator; theme/background color match the default theme's `#0b0b12`.
 
 ### 4. Code Pointers
 - `frontend/src/App.tsx` — screen composition, polling and generation guard, selected-card state, modal state
@@ -120,7 +121,7 @@ SPA의 프레젠테이션 계층이다(톱바 로고·페이지 타이틀은 "YO
 | 추이 패널 | `frontend/src/components/TrendsPanel.tsx` | 카테고리 점유율 스택 AreaChart + 진입/이탈 BarChart(`hours=48`) |
 | 브리핑 패널 | `frontend/src/components/BriefPanel.tsx` | LLM 3버튼 패널(오늘의 브리핑/어제와 비교/추이 리포트) — `GET /api/brief/stream` 스트리밍 소비. 파이프라인 트레이스(`.brief-steps` — 실행 중 ⋯/완료 ✓/실패 ✗ + ms), rAF 배칭 마크다운 스트리밍, in-band error 시 부분 결과 경고(`.brief-error`), 503 잠금(`.brief-locked`). LLM 본문은 마크다운, 상태/오류 문구는 평문 렌더 |
 | 모달 셸 | `frontend/src/components/Modal.tsx` | 공통 다이얼로그 — `role="dialog"`, 배경 클릭·Escape 닫기 |
-| 스타일 토큰 | `frontend/src/styles.css` | `[data-theme]` CSS 변수 세트 10종(기본 `neon-hunter`, 라이트는 `cotton-candy`) + 파생 별칭(`--bg-elevated`, `--border` 등). 제목 그라디언트 액센트 바(`.row h2::before`/`.panel h2::before`, 3px accent→accent2)와 공용 `.ai-chip` 텍스트 칩 포함. 나눔스퀘어 자체 호스팅 `@font-face` 3종(R=400, B=500-700, EB=800-900, `font-display: swap`)이 `font-family` 스택 최우선 |
+| 스타일 토큰 | `frontend/src/styles.css` | `[data-theme]` CSS 변수 세트 10종(기본 `neon-hunter`, 라이트는 `cotton-candy`) + 파생 별칭(`--bg-elevated`, `--border` 등). 제목 그라디언트 액센트 바(`.row h2::before`/`.panel h2::before`, 3px accent→accent2)와 공용 `.ai-chip` 텍스트 칩 포함. 나눔스퀘어 자체 호스팅 `@font-face` 3종(R=400, B=500-700, EB=800-900, `font-display: swap`)이 `font-family` 스택 최우선. standalone PWA 표시용 safe-area 인셋(`.topbar` `padding-top: max(12px, env(safe-area-inset-top))`, `body` `padding-bottom: env(safe-area-inset-bottom)`) |
 | 차트 팔레트 | `frontend/src/chartColors.ts` | 테마 무관 고정 8색 팔레트. `seriesAccent`, `enteredColor`/`exitedColor` |
 | 테마 전환 | `frontend/src/theme.ts`, `frontend/src/themes.ts` | 루트 요소 `data-theme` + localStorage `yt-theme`. 스와치 hex 사본은 `themes.ts`에 있다(`styles.css`와 동기 유지). localStorage 불가 시 조용히 무시 |
 
@@ -143,6 +144,7 @@ SPA의 프레젠테이션 계층이다(톱바 로고·페이지 타이틀은 "YO
 - 사이드바와 포커스 뷰는 새 시각 언어를 더하지 않는다: 사이드바 항목은 행 제목의 수식을 걷어낸 짧은 라벨(`sideLabel`)이고, 포커스 뷰는 어떤 주제든 `top10` 빅넘버 행 스타일을 재사용해 TOP 20을 보여준다 — 하나의 스트립 레이아웃이 홈과 포커스를 모두 담당한다.
 - UI는 설계상 이모지를 쓰지 않는다: 백엔드 행 제목이 평문으로 온다("지금 한국 급상승 TOP 10", "조회수 급증 중", "오늘 첫 진입", "순위 역주행", "YouTube Music · …" 차트 제목 5행, "힐링이 필요할 때"/"도파민 충전소", 스포트라이트 제목 "{이름} 인기 영상", 분야명 원문, "미국은 지금" — "추정" 수식은 제목이 아니라 AI 행 힌트에 있다). 인사이트 칩에도 이모지가 없고, 프론트 라벨("테마", "내 취향 찾기", "홈", 태깅 안내문)도 이모지를 걷어냈다. 시각적 앵커는 제목 그라디언트 바, `.side-head` 그룹 헤더, `.ai-chip` 텍스트 칩(히어로 줄 "AI", 팝오버 "AI 브리핑" — `.pv-ai-label` 삭제)이 담당한다.
 - 타이포그래피는 자체 호스팅 나눔스퀘어 웹폰트다: `src/assets/fonts/`의 woff2 3종을 가중치 400/500-700/800-900에 매핑하고 `font-display: swap`(시스템 폰트 선표시 후 교체)을 쓴다. Vite가 해시 자산으로 번들해 CloudFront/ALB 경계 안에서 외부 폰트 CDN 없이 서빙된다. 네이버 나눔글꼴 라이선스는 웹 임베딩을 허용한다.
+- 설치형 PWA(아이폰/아이패드 홈 화면)로도 동작한다: standalone 표시 + `black-translucent` 상태 바 + `viewport-fit=cover` 조합이라 톱바와 body에 safe-area 인셋을 둬 노치·홈 인디케이터와 콘텐츠가 겹치지 않게 한다. theme/background 색은 기본 테마의 `#0b0b12`와 일치한다.
 
 ### 4. 코드 포인터
 - `frontend/src/App.tsx` — 화면 구성, 폴링·세대 가드, 선택 카드 상태, 모달 상태

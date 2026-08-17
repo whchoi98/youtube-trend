@@ -95,6 +95,8 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden;
+  /* PWA standalone 하단 홈 인디케이터 안전 영역 */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 a { color: inherit; }
 button { font-family: inherit; cursor: pointer; }
@@ -123,6 +125,8 @@ button { font-family: inherit; cursor: pointer; }
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 14px;
   padding: 12px 4vw;
+  /* PWA standalone(노치/다이나믹 아일랜드) 안전 영역 */
+  padding-top: max(12px, env(safe-area-inset-top));
   background: linear-gradient(color-mix(in srgb, var(--bg) 92%, transparent), transparent);
   backdrop-filter: blur(8px);
 }

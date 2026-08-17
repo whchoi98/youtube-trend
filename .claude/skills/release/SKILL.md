@@ -12,7 +12,7 @@ description: semver와 이중 언어 CHANGELOG로 릴리스를 진행한다. 릴
 ### 1. 사전 점검
 - 작업 트리가 깨끗한지 확인: `git status`
 - 전체 검증 통과 확인 (/test-all 순서와 동일):
-  - `cd backend && .venv/bin/pytest tests/ -q` — 130 passed
+  - `cd backend && .venv/bin/pytest tests/ -q` — 131 passed
   - `cd frontend && npx tsc --noEmit && npm run build`
   - `cd infra && npx aws-cdk@2 synth` (반드시 npx aws-cdk@2)
 - CHANGELOG.md의 Unreleased 절에 누락된 변경이 없는지 커밋 로그와 대조

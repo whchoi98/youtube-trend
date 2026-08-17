@@ -45,3 +45,25 @@ def test_index_fallback_sets_no_cache(tmp_path, monkeypatch):
     res = client.get("/no-such-route")
     assert res.headers["cache-control"] == "no-cache"
     assert client.get("/app.js").headers.get("cache-control") != "no-cache"
+
+
+def test_service_worker_served_with_no_cache(tmp_path, monkeypatch):
+    """PWA 서비스 워커/매니페스트는 재검증 강제 — CloudFront 장기 캐시 방지."""
+    static = tmp_path / "static"
+    (static / "assets").mkdir(parents=True)
+    (static / "index.html").write_text("<html></html>")
+    (static / "sw.js").write_text("// sw")
+    (static / "manifest.webmanifest").write_text("{}")
+    monkeypatch.setenv("STATIC_DIR", str(static))
+
+    from fastapi.testclient import TestClient
+    from app.config import Settings
+    from app.main import create_app
+    app = create_app(Settings(table_name="t", yt_api_key="x",
+                              collect_enabled=False),
+                     store=object(), yt=object())
+    client = TestClient(app)
+    for path in ("/sw.js", "/manifest.webmanifest"):
+        res = client.get(path)
+        assert res.status_code == 200
+        assert res.headers["cache-control"] == "no-cache"
