@@ -135,18 +135,28 @@ button { font-family: inherit; cursor: pointer; }
   background: linear-gradient(90deg, var(--accent), var(--accent2));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-/* 상단 메뉴 — 기존 탭바처럼 액센트 언더라인으로 활성 표시 */
-.nav-tabs { display: flex; gap: 2px; }
+/* 상단 메뉴 — 라운드 박스(세그먼트 컨트롤)로 감싸고 활성 탭은 액센트 필 */
+.nav-tabs {
+  display: flex; gap: 2px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 28%, transparent);
+  border-radius: 999px;
+}
 .nav-tab {
-  background: transparent; border: none; border-radius: 0;
-  border-bottom: 2px solid transparent;
-  color: var(--muted); font-size: 14px; padding: 6px 12px;
+  background: transparent; border: none; border-radius: 999px;
+  color: var(--muted); font-size: 14px; padding: 6px 14px;
+  white-space: nowrap;
 }
 .nav-tab:hover { color: var(--text); }
 .nav-tab.active {
-  color: var(--text); border-bottom-color: var(--accent); font-weight: 700;
+  /* accent 필 컨트롤의 전경 토큰은 --on-cta다(.go와 동일) — --on-accent(전 테마
+     #000)는 neon-hunter accent(#c026d3) 위에서 4.46:1로 AA 미달 */
+  color: var(--on-cta); background: var(--accent); font-weight: 700;
 }
 .last-at { color: var(--muted); font-size: 12px; }
+/* 시계열 적재 구간·샘플 간격 안내 */
+.coverage-note { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
 .spacer { flex: 1; }
 .tb-btn {
   background: color-mix(in srgb, var(--card) 70%, transparent);
@@ -694,7 +704,8 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 760px) {
   .topbar { flex-wrap: wrap; row-gap: 2px; }
   .logo { font-size: 16px; }
-  .nav-tab { font-size: 13px; padding: 4px 8px; }
+  .nav-tabs { padding: 2px; }
+  .nav-tab { font-size: 13px; padding: 4px 10px; }
 }
 
 @media (max-width: 640px) {

@@ -2,7 +2,7 @@
 
 ## Role
 
-React + Vite + TypeScript SPA(로고: YOUTUBE TREND MONITOR)다. 상단 메뉴(기존 탭 스타일, 액센트 언더라인)로 3화면을 전환한다: **홈**(히어로 빌보드 → 선택 콘텐츠 추이 → 인사이트 칩 → 가로 스트립 행들 top10/accel/topic/age/category/퀴즈 맞춤), **시계열 추이**(영상 시계열 패널), **점유율·리포트**(카테고리 점유율 추이 + AI 브리핑). 라우터 없이 view 상태 하나로 전환하며, 60초 폴링으로 `/api/home`을 자동 갱신한다.
+React + Vite + TypeScript SPA(로고: YOUTUBE TREND MONITOR)다. 상단 메뉴(라운드 세그먼트 박스 — 활성 탭은 액센트 필)로 3화면을 전환한다: **홈**(히어로 빌보드 → 선택 콘텐츠 추이 → 인사이트 칩 → 가로 스트립 행들 top10/accel/topic/age/category/퀴즈 맞춤), **시계열 추이**(영상 시계열 패널), **점유율·리포트**(카테고리 점유율 추이 + AI 브리핑). 라우터 없이 view 상태 하나로 전환하며, 60초 폴링으로 `/api/home`을 자동 갱신한다.
 
 - `src/App.tsx` — 톱바(로고·상단 메뉴·새로고침·테마)·view 전환·홈 로드(60초 폴링 + 세대 가드)·선택 콘텐츠 상태·모달 상태
 - `src/components/Hero.tsx` — 빌보드: 기본은 전체 1위, 타일 선택 시 해당 콘텐츠의 제목·카테고리 칩·간단한 소개(description)·YouTube 링크로 전환 (maxres 배경 + onError 폴백)

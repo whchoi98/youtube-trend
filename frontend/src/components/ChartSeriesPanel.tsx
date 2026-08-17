@@ -124,7 +124,13 @@ export function ChartSeriesPanel() {
         <p className="muted">이 차트의 시계열 기록이 아직 없습니다</p>
       )}
       {history.status === 'ready' && history.data.length > 0 && (
-        <HistoryCharts points={history.data} height={220} maxRank={20} />
+        <HistoryCharts
+          points={history.data}
+          height={220}
+          maxRank={20}
+          windowHours={hours}
+          coverageNote="차트에 오른 동안에만 시간별로 적재됩니다"
+        />
       )}
     </>
   )

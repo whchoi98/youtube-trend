@@ -15,7 +15,8 @@ export type Loadable<T> =
   | { status: 'ready'; data: T }
 export interface Category { id: string; name: string }
 export interface HistoryPoint { ts: string; rank: number | null; views: number }
-export interface TrendBucket { ts: string; shares: Record<string, number>; entered: number; exited: number }
+// entered/exited는 첫 버킷(비교 기준 없음)에서 null이다 — null vs 0 계약
+export interface TrendBucket { ts: string; shares: Record<string, number>; entered: number | null; exited: number | null }
 
 /** AI 태깅 결과 — 수집 후 배치 태깅이라 없을 수 있다(카드에 tags 필드 자체가 없음).
  *  comment는 한 줄 AI 분석(80자 상한) — 도입 이전 버킷의 태그에는 없다. */

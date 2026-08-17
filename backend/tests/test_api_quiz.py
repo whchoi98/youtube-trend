@@ -53,8 +53,35 @@ def test_quiz_returns_deterministic_type_and_items(table):
     store.put_snapshot("all", NOW, cards)
     body = client.post("/api/quiz", json={
         "mood": "도파민", "time": "심야", "style": "몰입"}).json()
-    assert body["type"] == "심야 몰아보기 장인"
+    assert body["type"] == "새벽의 도파민 다이버"
     assert [c["rank"] for c in body["items"]] == list(range(1, 11))
+
+
+def test_quiz_type_names_unique_for_all_combinations(table):
+    # 3부 합성(시간 수식어+무드 명사+스타일 호칭)이 4×3×3=36조합 전부 유일해야 한다
+    from itertools import product
+
+    from app import home as home_logic
+
+    names = [home_logic.quiz_type(m, t, s)
+             for m, t, s in product(home_logic.QUIZ_MOODS,
+                                    home_logic.QUIZ_TIMES,
+                                    home_logic.QUIZ_STYLES)]
+    assert len(names) == 36
+    assert len(set(names)) == 36
+
+
+def test_quiz_accepts_new_answers_and_weights_knowledge(table):
+    client, store = make_client(table)
+    store.put_snapshot("all", NOW, [
+        card("video-music", 1, category_id="10", category="음악"),
+        card("video-sci", 2, category_id="28", category="과학기술"),
+    ])
+    body = client.post("/api/quiz", json={
+        "mood": "지식", "time": "출퇴근길", "style": "같이 보기"}).json()
+    assert body["type"] == "길 위의 지식 메이트"
+    # 지식은 과학기술(+3) > 음악(0) — 순위 타이브레이크(1위 우세)를 이긴다
+    assert body["items"][0]["videoId"] == "video-sci"
 
 
 def test_quiz_category_weight_prefers_mood_match(table):

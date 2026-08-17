@@ -40,6 +40,30 @@ def test_baseline_snapshot_falls_back_and_respects_min_age(table):
     assert s2.baseline_snapshot("10", NOW, [1], min_age_hours=0.75) is None
 
 
+def test_snapshots_sampled_anchors_at_until_and_skips_missing(table):
+    s = TrendStore(table)
+    # 0~9시간 전 중 7h 버킷만 비움 — 앵커(0h)에서 step=3 과거 방향: 9,6,3,0
+    for h in range(10):
+        if h == 7:
+            continue
+        s.put_snapshot("all", NOW - timedelta(hours=h), [dict(CARD, views=h)])
+    got = s.snapshots_sampled("all", NOW - timedelta(hours=9), NOW, 3)
+    assert [snap["items"][0]["views"] for snap in got] == [9, 6, 3, 0]
+    # 결손 버킷이 step에 걸리면 건너뛴다: step=7 → 7h 결손, 0h만
+    got = s.snapshots_sampled("all", NOW - timedelta(hours=7), NOW, 7)
+    assert [snap["items"][0]["views"] for snap in got] == [0]
+
+
+def test_snapshots_sampled_backsearches_missing_anchor(table):
+    s = TrendStore(table)
+    # 앵커(0h) 버킷이 없으면 1시간씩 후퇴해 가장 새로운 실존 버킷(-1h)을
+    # 앵커로 쓴다 — step 점프로 -3h까지 건너뛰면 최신 포인트가 후퇴한다
+    for h in range(1, 10):
+        s.put_snapshot("all", NOW - timedelta(hours=h), [dict(CARD, views=h)])
+    got = s.snapshots_sampled("all", NOW - timedelta(hours=9), NOW, 3)
+    assert [snap["items"][0]["views"] for snap in got] == [7, 4, 1]
+
+
 def test_video_history_orders_ascending(table):
     s = TrendStore(table)
     for h, views in [(3, 10), (2, 20), (1, 30)]:

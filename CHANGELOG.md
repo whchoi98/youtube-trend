@@ -43,11 +43,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Embed the NanumSquare webfont (self-hosted woff2, weights 400/700/800, font-display swap) for better Korean readability
 
 - Add PWA support for iPhone/iPad home-screen install: web app manifest, generated app icons (180/192/512 incl. maskable), apple-touch meta tags, safe-area insets for the notch, and a conservative service worker (hashed assets cache-first, navigations network-first, API never cached); sw.js and the manifest are served with no-cache so updates roll out immediately
+- Add week/month ranges to the category-share panel: `GET /api/trends/categories` now accepts hours up to 720 — ranges beyond 96h are read as step-sampled GetItems (`step = ceil(hours/96)`, newest bucket anchored, constant read cost) with the sample interval reported as `stepHours` and shown as a caption
 
 ### Changed
+- Wrap the top menu in a rounded segmented-control box (active tab filled with the accent color) for readability
+- Expand the taste quiz from 3×2-choice (8 types) to 4/3/3 choices — new answers 지식/감동, 출퇴근길, 같이 보기 — with 36 unique result types composed from time/mood/style word parts; tagging vibe vocabulary gains 지식/감동 so future tags can match the new moods
+- Rename the hero back button from "1위 화면으로" to "홈 화면으로"
 - Refine the UI toward a more premium look: emoji removed from row titles, insights, sidebar, and buttons in favor of gradient accent bars on headings, sidebar section headers, and a small "AI" text chip
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
 - Rename the top logo/title to YOUTUBE TREND MONITOR; the video detail modal is superseded by hero selection
+
+### Fixed
+- Fix the period toggle on the video/music time-series looking unresponsive: points only accrue while a video is on the trending list or chart, and the auto-fitted X axis rendered the same chart for every range — the X axis now pins to the selected window (24h/week/month) and a caption states the actual coverage span
 
 ## [0.1.0] - 2026-08-04
 
@@ -111,11 +118,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 나눔스퀘어 웹폰트 임베딩(자체 호스팅 woff2, 400/700/800, font-display swap)으로 한글 가독성 개선
 
 - 아이폰/아이패드 홈 화면 설치용 PWA 지원 추가: 웹 앱 매니페스트, 생성한 앱 아이콘(180/192/512, maskable 포함), apple-touch 메타, 노치 안전 영역(safe-area), 보수적 서비스 워커(해시 자산 cache-first, 내비게이션 network-first, API 미캐시). sw.js·매니페스트는 no-cache로 서빙해 업데이트 즉시 반영
+- 점유율 패널에 일주일/한 달 기간을 추가했습니다: `GET /api/trends/categories`가 hours 720까지 허용하며, 96시간 초과 범위는 step 간격 GetItem 샘플 조회(`step = ceil(hours/96)`, 최신 버킷 앵커, 읽기량 상수)로 제공하고 샘플 간격을 `stepHours`로 반환해 화면에 표기합니다
 
 ### Changed
+- 상단 메뉴를 라운드 세그먼트 박스로 감싸고 활성 탭을 액센트 색으로 채워 가독성을 높였습니다
+- 취향 퀴즈를 3문항 2지선다(8유형)에서 문항별 4/3/3 선택지로 확장했습니다 — 새 답변 지식/감동, 출퇴근길, 같이 보기 — 시간/무드/스타일 어휘 합성으로 36개 유형명이 전부 유일합니다. 태깅 vibe 어휘에도 지식/감동을 추가해 이후 태그가 새 무드와 매칭됩니다
+- 히어로의 돌아가기 버튼 문구를 "1위 화면으로"에서 "홈 화면으로"로 바꿨습니다
 - UI 고급화: 행 제목·인사이트·사이드바·버튼의 이모지를 제거하고 제목 그라디언트 액센트 바, 사이드바 섹션 헤더, "AI" 텍스트 칩으로 대체
 - 3탭 레이아웃을 넷플릭스형 홈으로 교체한 뒤, 기존 탭 스타일의 상단 메뉴를 재도입: 홈 / 시계열 추이 / 점유율·리포트 화면 분리(차트·LLM 브리핑은 각자 화면에서 표시)
 - 상단 로고/타이틀을 YOUTUBE TREND MONITOR로 변경, 영상 상세 모달은 히어로 선택 방식으로 대체
+
+### Fixed
+- 영상/뮤직 시계열의 기간 토글이 무반응처럼 보이던 문제를 고쳤습니다: 시계열 포인트는 급상승 목록·차트에 오른 동안에만 적재되는데 X축이 데이터 범위에 자동 맞춤되어 기간을 바꿔도 차트가 같아 보였습니다 — 이제 X축을 선택 기간(24시간/일주일/한 달)에 고정하고 실제 적재 구간과 사유를 안내문으로 표기합니다
 
 ## [0.1.0] - 2026-08-04
 

@@ -70,7 +70,7 @@ export function Hero({ hero, selected, music, onQuiz, onClear }: {
           </a>
           {selected ? (
             <button type="button" className="btn-quiz" onClick={onClear}>
-              ✕ 1위 화면으로
+              홈 화면으로
             </button>
           ) : (
             <button type="button" className="btn-quiz" onClick={onQuiz}>

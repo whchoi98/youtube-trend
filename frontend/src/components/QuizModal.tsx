@@ -3,10 +3,11 @@ import { ApiError, postJson } from '../api'
 import type { HomeRow, QuizResult } from '../types'
 import { Modal } from './Modal'
 
+// opts 값은 백엔드 QUIZ_MOODS/TIMES/STYLES와 문자열이 정확히 일치해야 한다
 const QUIZ = [
-  { key: 'mood', label: '지금 원하는 건?', opts: ['힐링', '도파민'] },
-  { key: 'time', label: '주로 언제 보나요?', opts: ['낮', '심야'] },
-  { key: 'style', label: '보는 방식은?', opts: ['몰입', '가볍게'] },
+  { key: 'mood', label: '지금 원하는 건?', opts: ['힐링', '도파민', '지식', '감동'] },
+  { key: 'time', label: '주로 언제 보나요?', opts: ['낮', '심야', '출퇴근길'] },
+  { key: 'style', label: '보는 방식은?', opts: ['몰입', '가볍게', '같이 보기'] },
 ] as const
 
 type QuizKey = (typeof QUIZ)[number]['key']

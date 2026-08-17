@@ -57,8 +57,9 @@ def category_series(snapshots):
         for c in s["items"]:
             cid = c.get("categoryId", "")
             shares[cid] = shares.get(cid, 0) + 1
-        entered = len(ids - prev_ids) if prev_ids is not None else 0
-        exited = len(prev_ids - ids) if prev_ids is not None else 0
+        # 첫 버킷은 비교 기준이 없다 — null(계산 불가) vs 0(실측) 계약을 따른다
+        entered = len(ids - prev_ids) if prev_ids is not None else None
+        exited = len(prev_ids - ids) if prev_ids is not None else None
         out.append({"ts": s["bucket"], "shares": shares,
                     "entered": entered, "exited": exited})
         prev_ids = ids

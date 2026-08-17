@@ -8,7 +8,7 @@ YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비
 
 ## Tech Stack
 
-- Backend: Python 3.12 + FastAPI (`backend/` — pytest 131개, venv는 `backend/.venv`)
+- Backend: Python 3.12 + FastAPI (`backend/` — pytest 137개, venv는 `backend/.venv`)
 - Frontend: React 18 + Vite + TypeScript (`frontend/` — recharts, react-markdown)
 - IaC: AWS CDK Python (`infra/` — 스택 `YoutubeTrendsStack`, VPC existing/new 2모드)
 - Container: Docker 멀티스테이지 (`backend/Dockerfile`, 빌드 컨텍스트 = 저장소 루트)
@@ -31,7 +31,7 @@ backend/            - FastAPI 앱 + 테스트
   app/charts.py     - YouTube Music 공식 차트 5종 정의(재생목록 id·제목)
   app/spotlights.py - 채널 스포트라이트 3종 정의(AWS·Anthropic·OpenAI 핸들·제목)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
-  tests/            - pytest 131개 (moto 기반)
+  tests/            - pytest 137개 (moto 기반)
 frontend/           - React SPA (로고 YOUTUBE TREND MONITOR — 상단 메뉴 3화면:
                       홈 / 시계열 추이 / 점유율·리포트)
   src/components/   - Hero(선택 빌보드), Row(타일/순위 칩/배지), Sidebar(주제 TOP 20),
@@ -47,7 +47,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## Key Commands
 
-- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (131개)
+- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (137개)
 - 프론트 게이트: `cd frontend && npx tsc --noEmit && npm run build`
 - 배포: `./scripts/deploy.sh`
 - 스모크: `./scripts/smoke.sh <SiteUrl>`
@@ -57,11 +57,11 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 - `GET /api/home` — 홈 조합: 히어로(1위+차트인 시간)·인사이트 칩·채널 랭킹(channels)·행 구성(top10/accel/new/climb/chart×5/topic/vibe/category/region/spotlight)·태그 병합
 - `GET /api/charts/{chartId}/videos/{videoId}/history?hours` — YouTube Music 차트 곡 시계열 (hours 2~720 — 수집 시 적재하는 곡별 소형 포인트 조회)
-- `POST /api/quiz {mood, time, style}` — 취향 퀴즈 → 유형명 + 맞춤 추천 카드 (결정적, LLM 미호출)
+- `POST /api/quiz {mood, time, style}` — 취향 퀴즈(4×3×3 선택지, 36유형 합성명) → 유형명 + 맞춤 추천 카드 (결정적, LLM 미호출)
 - `GET /api/trending?scope=all|{catId}` — 전체 Top30 / 카테고리 Top10
 - `GET /api/categories` — 카테고리 목록
 - `GET /api/videos/{id}/history?hours` — 개별 영상 시계열
-- `GET /api/trends/categories?hours` — 카테고리 점유율 추이 (hours 2~96)
+- `GET /api/trends/categories?hours` — 카테고리 점유율 추이 (hours 2~720 — 96 초과는 다운샘플, `stepHours` 반환)
 - `GET /api/brief/stream?scope&mode=now|daily|trend` — SSE 스트리밍 브리핑/리포트 (step 파이프라인 트레이스 + delta 토큰 + done/error)
 - `POST /api/brief {scope, mode}` — LLM 브리핑
 - `POST /api/trends/report {scope}` — LLM 추이 리포트
@@ -74,7 +74,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 - DynamoDB 키 규칙(pk/sk 포맷)은 `backend/app/store/keys.py` 단일 정의다. 다른 파일에서 키 문자열을 직접 조립하지 않는다.
 - 시크릿은 `.env` 단일 공급이다: `YT_API_KEY`(필수), `AWS_BEARER_TOKEN_BEDROCK`(선택 — 없으면 LLM 엔드포인트만 503), `ORIGIN_VERIFY_TOKEN`(고정 권장), `VPC_MODE`/`VPC_NAME`/`APP_SECRET_NAME`. `deploy.sh`가 Secrets Manager(`youtube-trends/app`)로 push 하고 스택은 이름 참조만 한다. 시크릿 값은 어떤 파일·로그·출력에도 기록하지 않는다.
 - Bedrock 호출은 Bearer 토큰 인증 전용이다. SigV4/IAM 인증 코드를 추가하지 않는다.
-- `hours` 파라미터 상한은 96이다 — DynamoDB Query 응답 1MB 한도를 넘지 않기 위한 캡이며, 늘리려면 페이지네이션부터 설계한다.
+- 스냅샷 범위 조회(`/api/trends/categories`)는 96h까지 전 버킷 Query(1MB 한도 내), 97~720h는 step=ceil(hours/96) 간격 GetItem 다운샘플이다(`store.snapshots_sampled`, 응답에 `stepHours`). 영상·차트 시계열은 곡/영상별 소형 아이템이라 hours 상한 720을 그대로 Query 한다.
 - 문서 문체: 내부 문서는 한국어 평서형(-다), README/CHANGELOG는 영/한 이중 언어(한국어 절은 경어체), 이모지 금지, 코드 블록에 언어 태그, 날짜는 ISO 8601.
 
 ---

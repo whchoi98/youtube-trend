@@ -107,6 +107,43 @@ class TrendStore:
         )
         return [self._to_snapshot(i) for i in res["Items"]]
 
+    def snapshots_sampled(self, scope, since, until, step_hours):
+        """step_hours 간격 버킷을 GetItem으로 샘플 조회 (시간 오름차순).
+
+        스냅샷은 버킷당 ~11KB라 96h를 넘는 범위는 Query 1MB 한도에 걸린다.
+        범위 전체를 페이지네이션으로 다 읽는 대신, 앵커부터 과거 방향 step
+        간격의 버킷만 점조회한다 — 읽기량이 hours와 무관하게 상수(≤96버킷
+        + 앵커 탐색 ≤step-1회)로 유지된다. 수집 공백으로 비는 버킷은
+        건너뛴다.
+
+        앵커: until의 floor 버킷이 비어 있으면(정각~수집 완료 사이 요청,
+        해당 시각 수집 실패·misfire) 1시간씩 최대 step-1회 후퇴해 가장
+        새로운 실존 버킷을 앵커로 쓴다 — 그대로 step 점프하면 더 새로운
+        실존 버킷을 건너뛰어 최신 포인트가 최대 step시간 후퇴해 보인다."""
+        def _get(dt):
+            res = self.table.get_item(
+                Key={"pk": keys.snap_pk(scope),
+                     "sk": keys.ts_sk(keys.hour_bucket(dt))})
+            return res.get("Item")
+
+        anchor = until.astimezone(timezone.utc).replace(
+            minute=0, second=0, microsecond=0)
+        dt, item = anchor, _get(anchor)
+        for back in range(1, step_hours):
+            probe = anchor - timedelta(hours=back)
+            if item is not None or probe < since:
+                break
+            dt, item = probe, _get(probe)
+
+        out = []
+        while dt >= since:
+            if item:
+                out.append(self._to_snapshot(item))
+            dt -= timedelta(hours=step_hours)
+            item = _get(dt) if dt >= since else None
+        out.reverse()
+        return out
+
     # -- 영상 시계열 -----------------------------------------------------
     def put_video_points(self, bucket, now, points):
         with self.table.batch_writer() as bw:

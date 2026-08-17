@@ -69,5 +69,27 @@ def test_trends_categories_endpoint(table):
     store.put_snapshot("all", NOW - timedelta(hours=1), [card("a", 1)])
     store.put_snapshot("all", NOW, [card("b", 1)])
     body = client.get("/api/trends/categories?hours=48").json()
-    assert body["hours"] == 48 and len(body["series"]) == 2
+    assert body["hours"] == 48 and body["stepHours"] == 1
+    assert len(body["series"]) == 2
     assert body["series"][1]["entered"] == 1
+
+
+def test_trends_categories_long_range_downsamples(table):
+    # 96h 초과는 step 간격 GetItem 샘플 — 720h면 step=8, 최신 버킷이 앵커라
+    # step에 안 걸리는 중간 버킷(-1h 등)은 건너뛴다
+    client, store = make_client(table)
+    for off in (16, 8, 1, 0):
+        store.put_snapshot("all", NOW - timedelta(hours=off),
+                           [card(f"v{off}", 1)])
+    body = client.get("/api/trends/categories?hours=720").json()
+    assert body["stepHours"] == 8
+    assert [b["ts"] for b in body["series"]] == [
+        (NOW - timedelta(hours=off)).strftime("%Y-%m-%dT%H")
+        for off in (16, 8, 0)]
+
+
+def test_trends_categories_hours_over_720_rejected(table):
+    client, _ = make_client(table)
+    res = client.get("/api/trends/categories?hours=721")
+    assert res.status_code == 400
+    assert res.json() == {"error": "잘못된 요청입니다"}

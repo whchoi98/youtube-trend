@@ -17,28 +17,32 @@ DERIVED_ROW_MIN = 2    # 신규 진입/역주행 행 최소 타일 수
 # 무드 행 — AI 태깅의 vibe 값 중 행으로 만들 무드와 제목
 VIBE_ROWS = [("힐링", "힐링이 필요할 때"), ("도파민", "도파민 충전소")]
 
-# 취향 퀴즈: (mood, time, style) 8조합 → 유형명. 결정적 매핑 — LLM 미사용.
-QUIZ_MOODS = ("힐링", "도파민")
-QUIZ_TIMES = ("낮", "심야")
-QUIZ_STYLES = ("몰입", "가볍게")
-QUIZ_TYPES = {
-    ("힐링", "낮", "몰입"): "한낮의 힐링 다이버",
-    ("힐링", "낮", "가볍게"): "산책길 무드 컬렉터",
-    ("힐링", "심야", "몰입"): "새벽 감성 항해사",
-    ("힐링", "심야", "가볍게"): "야간 힐링 유랑러",
-    ("도파민", "낮", "몰입"): "정오의 트렌드 헌터",
-    ("도파민", "낮", "가볍게"): "점심시간 파도타기러",
-    ("도파민", "심야", "몰입"): "심야 몰아보기 장인",
-    ("도파민", "심야", "가볍게"): "새벽 도파민 스나이퍼",
-}
-# mood/style별 분야 가중치 — 태그가 없어도(LLM 미설정) 추천이 동작하는 바닥선.
+# 취향 퀴즈: (mood, time, style) 4×3×3=36조합 → 유형명. 결정적 합성 — LLM 미사용.
+# 유형명은 시간 수식어 + 무드 명사 + 스타일 호칭 3부 합성이라 조합이 늘어도
+# 이름표가 자동으로 유일하다(예: "한낮의 힐링 다이버", "길 위의 지식 서퍼").
+QUIZ_MOODS = ("힐링", "도파민", "지식", "감동")
+QUIZ_TIMES = ("낮", "심야", "출퇴근길")
+QUIZ_STYLES = ("몰입", "가볍게", "같이 보기")
+TIME_WORD = {"낮": "한낮의", "심야": "새벽의", "출퇴근길": "길 위의"}
+MOOD_WORD = {"힐링": "힐링", "도파민": "도파민", "지식": "지식", "감동": "감성"}
+STYLE_WORD = {"몰입": "다이버", "가볍게": "서퍼", "같이 보기": "메이트"}
+# 답변별 분야 가중치 — 태그가 없어도(LLM 미설정) 추천이 동작하는 바닥선.
+# 분야 id는 YouTube videoCategoryId(수집 8분야 외 id도 카드에 실려올 수 있다).
 MOOD_CATS = {
     "힐링": {"10": 3, "1": 2, "28": 1},
     "도파민": {"20": 3, "24": 3, "23": 2, "17": 2, "25": 1},
+    "지식": {"28": 3, "27": 3, "25": 2, "26": 1},
+    "감동": {"1": 3, "10": 2, "15": 1, "22": 1},
+}
+TIME_CATS = {
+    "낮": {},
+    "심야": {"1": 1, "10": 1},
+    "출퇴근길": {"25": 2, "23": 1, "24": 1},
 }
 STYLE_CATS = {
     "몰입": {"1": 2, "10": 2, "20": 1},
     "가볍게": {"23": 2, "24": 2},
+    "같이 보기": {"24": 2, "17": 2, "23": 1, "15": 1},
 }
 QUIZ_ITEMS = 10
 VIBE_MATCH_SCORE = 3
@@ -204,7 +208,7 @@ def tenure_hours(history):
 
 
 def quiz_type(mood, time, style):
-    return QUIZ_TYPES[(mood, time, style)]
+    return f"{TIME_WORD[time]} {MOOD_WORD[mood]} {STYLE_WORD[style]}"
 
 
 def quiz_pick(items, mood, time, style):
@@ -218,6 +222,7 @@ def quiz_pick(items, mood, time, style):
             s += VIBE_MATCH_SCORE
         cid = c.get("categoryId")
         s += MOOD_CATS.get(mood, {}).get(cid, 0)
+        s += TIME_CATS.get(time, {}).get(cid, 0)
         s += STYLE_CATS.get(style, {}).get(cid, 0)
         rank = c.get("rank") if _pos_int(c.get("rank")) else 999
         s += (31 - min(rank, 31)) / 30.0

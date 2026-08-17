@@ -10,7 +10,8 @@ def snap(bucket, ids_cats):
 def test_shares_counted_per_bucket():
     out = category_series([snap("2026-08-04T08", [("a", "10"), ("b", "10"), ("c", "20")])])
     assert out[0]["shares"] == {"10": 2, "20": 1}
-    assert out[0]["entered"] == 0 and out[0]["exited"] == 0  # 첫 스냅샷은 기준 없음
+    # 첫 스냅샷은 비교 기준이 없다 — 실측 0이 아니라 null(계산 불가)
+    assert out[0]["entered"] is None and out[0]["exited"] is None
 
 
 def test_entered_exited_between_buckets():

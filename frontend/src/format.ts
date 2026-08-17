@@ -26,6 +26,18 @@ export function musicUrl(videoId: string): string {
   return `https://music.youtube.com/watch?v=${encodeURIComponent(videoId)}`
 }
 
+/** UTC 시 버킷 문자열("YYYY-MM-DDTHH") → epoch ms. 숫자 시간축(X 도메인 고정)용. */
+export function bucketMs(ts: string): number {
+  return Date.parse(`${ts}:00:00Z`)
+}
+
+/** epoch ms → KST 표기. coarse=true면 "M/D"(주·월 축 눈금), 아니면 "M/D H시". */
+export function formatMsKst(ms: number, coarse = false): string {
+  const kst = new Date(ms + 9 * 3_600_000)
+  const md = `${kst.getUTCMonth() + 1}/${kst.getUTCDate()}`
+  return coarse ? md : `${md} ${kst.getUTCHours()}시`
+}
+
 /**
  * UTC 시 버킷 문자열("YYYY-MM-DDTHH")을 KST(UTC+9, DST 없음) 표기로 변환한다.
  * 예: "2026-08-04T15" -> "8/5 0시". Date를 +9h 이동시킨 뒤 getUTC* 접근자로 값을

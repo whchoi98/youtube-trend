@@ -5,13 +5,15 @@ export const PERIODS = [
   { hours: 720, label: '한 달' },
 ] as const
 
-export function PeriodToggle({ value, onChange }: {
+export function PeriodToggle({ value, onChange, periods = PERIODS }: {
   value: number
   onChange: (hours: number) => void
+  /** 패널별 커스텀 기간 목록 — 점유율 패널은 48시간을 기본으로 유지한다. */
+  periods?: readonly { hours: number; label: string }[]
 }) {
   return (
     <div className="period-toggle" role="group" aria-label="조회 기간">
-      {PERIODS.map((p) => (
+      {periods.map((p) => (
         <button
           key={p.hours}
           type="button"

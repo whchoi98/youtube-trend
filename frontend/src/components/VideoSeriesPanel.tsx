@@ -86,7 +86,12 @@ export function VideoSeriesPanel() {
       )}
 
       {selectedId && history.status === 'ready' && history.data.length > 0 && (
-        <HistoryCharts points={history.data} height={220} />
+        <HistoryCharts
+          points={history.data}
+          height={220}
+          windowHours={hours}
+          coverageNote="급상승 목록에 오른 동안에만 시간별로 적재됩니다"
+        />
       )}
     </>
   )
