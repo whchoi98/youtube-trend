@@ -34,20 +34,21 @@ Screen composition (the top menu switches three views; items 2-5 form the "홈" 
 | Theme modal | `frontend/src/components/ThemeModal.tsx` | 10 theme swatches from `themes.ts` |
 | Selected trend | `frontend/src/components/SelectedTrend.tsx` | "선택한 콘텐츠 추이" panel under the hero — history charts for the selected card; empty history is a normal state (only overall Top30 entrants are recorded) |
 | History charts | `frontend/src/components/HistoryCharts.tsx` | Shared rank + views chart pair with log/linear toggle, used by `SelectedTrend` and `VideoSeriesPanel` (replaces the deleted `DetailModal.tsx`) |
-| Video series panel | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" view — Top30 video selector (`/api/trending?scope=all`) + history charts (`hours=168`); restores the old Trends-tab flow |
-| Chart series panel | `frontend/src/components/ChartSeriesPanel.tsx` | "YouTube Music 시계열" panel on the same view — chart + song selectors built from the `/api/home` chart rows; history charts over `/api/charts/{chartId}/videos/{videoId}/history?hours=72` with `maxRank={20}`; a `.music-link` "YouTube Music에서 듣기" link for the selected song |
-| History hook | `frontend/src/useVideoHistory.ts` | Generation-guarded `/api/videos/{id}/history?hours=168` fetch shared by the two panels above |
+| Video series panel | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" view — Top30 video selector (`/api/trending?scope=all`) + history charts with a `PeriodToggle` (default 168h); restores the old Trends-tab flow |
+| Chart series panel | `frontend/src/components/ChartSeriesPanel.tsx` | "YouTube Music 시계열" panel on the same view — chart + song selectors built from the `/api/home` chart rows; history charts over `/api/charts/{chartId}/videos/{videoId}/history` with a `PeriodToggle` (default 168h) and `maxRank={20}`; a `.music-link` "YouTube Music에서 듣기" link for the selected song |
+| Period toggle | `frontend/src/components/PeriodToggle.tsx` | Pill toggle shared by both series panels (`.period-toggle` capsule, `.period-btn.active` accent fill) — 24시간/일주일/한 달 = 24/168/720 hours |
+| History hook | `frontend/src/useVideoHistory.ts` | Generation-guarded `/api/videos/{id}/history` fetch, parameterized as `useVideoHistory(videoId, hours)` (default 168) — shared by the two panels above |
 | Trends panel | `frontend/src/components/TrendsPanel.tsx` | Category share stacked AreaChart + entered/exited BarChart (`hours=48`) |
 | Brief panel | `frontend/src/components/BriefPanel.tsx` | Three-button LLM panel (`오늘의 브리핑`/`어제와 비교`/`추이 리포트`) streaming from `GET /api/brief/stream`: pipeline trace (`.brief-steps` — running ⋯ / done ✓ / failed ✗ plus ms), rAF-batched markdown streaming, partial-result warning (`.brief-error`) on in-band error, 503 lock (`.brief-locked`); LLM text renders as markdown, status/error strings as plain text |
 | Modal shell | `frontend/src/components/Modal.tsx` | Shared dialog: `role="dialog"`, backdrop click and Escape close |
-| Style tokens | `frontend/src/styles.css` | 10 `[data-theme]` CSS variable sets (default `neon-hunter`; `cotton-candy` is the light theme) plus derived aliases (`--bg-elevated`, `--border`, …); gradient accent bars on headings (`.row h2::before`/`.panel h2::before`, 3px accent→accent2) and the shared `.ai-chip` text chip |
+| Style tokens | `frontend/src/styles.css` | 10 `[data-theme]` CSS variable sets (default `neon-hunter`; `cotton-candy` is the light theme) plus derived aliases (`--bg-elevated`, `--border`, …); gradient accent bars on headings (`.row h2::before`/`.panel h2::before`, 3px accent→accent2) and the shared `.ai-chip` text chip; self-hosted NanumSquare `@font-face` trio (R=400, B=500-700, EB=800-900, `font-display: swap`) heads the `font-family` stack |
 | Chart palette | `frontend/src/chartColors.ts` | Fixed theme-independent 8-color palette; `seriesAccent`, `enteredColor`/`exitedColor` |
 | Theme switch | `frontend/src/theme.ts`, `frontend/src/themes.ts` | `data-theme` on the root element + localStorage `yt-theme`; swatch hex copies live in `themes.ts` (kept in sync with `styles.css`); graceful no-op when localStorage is unavailable |
 
 Chart inventory (all recharts):
 
 - `TrendsPanel` — stacked share AreaChart over `/api/trends/categories?hours=48` plus an entered/exited BarChart
-- `HistoryCharts` — rank LineChart (Y reversed, domain 1–`maxRank`, default 30) and views LineChart with a log/linear toggle; rendered in three places — `SelectedTrend` (under the hero) and `VideoSeriesPanel` (both over `/api/videos/{id}/history?hours=168` via `useVideoHistory`), and `ChartSeriesPanel` (over `/api/charts/{chartId}/videos/{videoId}/history?hours=72`, `maxRank={20}`; off-chart hours render as gaps — null points)
+- `HistoryCharts` — rank LineChart (Y reversed, domain 1–`maxRank`, default 30) and views LineChart with a log/linear toggle; rendered in three places — `SelectedTrend` (under the hero, fixed 168h) and `VideoSeriesPanel` (`PeriodToggle`-selected hours), both over `/api/videos/{id}/history` via `useVideoHistory`, and `ChartSeriesPanel` (over `/api/charts/{chartId}/videos/{videoId}/history`, `PeriodToggle` default 168h, `maxRank={20}`; off-chart hours have no points, so the line breaks)
 - Series colors come from the fixed `chartColors.ts` palette; chart chrome (grid, axes, tooltip) uses theme CSS variables
 
 ### 3. Key Decisions
@@ -62,6 +63,7 @@ Chart inventory (all recharts):
 - The top menu keeps the old tab look (accent-underline `.nav-tab.active`) without a router: one `view` state switches the three views, every switch scrolls to top, and sub views sit in a `.page` container (renamed from `.bottom`); the 60s home polling runs regardless of the active view.
 - The sidebar and the focus view add no new visual language: sidebar entries are short labels stripped from the row titles (`sideLabel`), and the focus view reuses the `top10` big-numeral row style for any topic's TOP 20 — one strip layout serves both home and focus.
 - The UI is emoji-free by design: backend row titles ship plain text ("지금 한국 급상승 TOP 10", "조회수 급증 중", "오늘 첫 진입", "순위 역주행", the five "YouTube Music · …" chart titles, "힐링이 필요할 때"/"도파민 충전소", the "{name} 인기 영상" spotlight titles, category names verbatim, "미국은 지금" — the "추정" qualifier lives in the AI-row hint, not the title), insight chips carry no emoji, and frontend labels ("테마", "내 취향 찾기", "홈", the tagging notice) dropped theirs. Visual anchoring moved to the gradient heading bars, the `.side-head` group headers, and the `.ai-chip` text chip ("AI" on the hero line, "AI 브리핑" in the popover — `.pv-ai-label` was removed).
+- Typography is the self-hosted NanumSquare webfont: three woff2 files in `src/assets/fonts/` mapped to weights 400/500-700/800-900 with `font-display: swap` (system fonts show first, then swap), bundled by Vite as hashed assets — no external font CDN inside the CloudFront/ALB boundary. The Naver Nanum font license permits web embedding.
 
 ### 4. Code Pointers
 - `frontend/src/App.tsx` — screen composition, polling and generation guard, selected-card state, modal state
@@ -111,20 +113,21 @@ SPA의 프레젠테이션 계층이다(톱바 로고·페이지 타이틀은 "YO
 | 테마 모달 | `frontend/src/components/ThemeModal.tsx` | `themes.ts`의 테마 10종 스와치 |
 | 선택 콘텐츠 추이 | `frontend/src/components/SelectedTrend.tsx` | 히어로 아래 "선택한 콘텐츠 추이" 패널 — 선택 카드의 시계열 차트. 빈 시계열은 정상 상태다(전체 Top30 진입 영상만 기록) |
 | 시계열 차트 | `frontend/src/components/HistoryCharts.tsx` | 공용 순위+조회수 차트 쌍 + 로그/선형 토글 — `SelectedTrend`·`VideoSeriesPanel`이 사용(삭제된 `DetailModal.tsx` 대체) |
-| 영상 시계열 패널 | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" 화면 — Top30 영상 셀렉터(`/api/trending?scope=all`) + 시계열 차트(`hours=168`). 구 추이 분석 탭 흐름 복원 |
-| 차트 시계열 패널 | `frontend/src/components/ChartSeriesPanel.tsx` | 같은 화면의 "YouTube Music 시계열" 패널 — `/api/home`의 chart 행으로 차트+곡 셀렉터 구성. `/api/charts/{chartId}/videos/{videoId}/history?hours=72` 기반 시계열 차트, `maxRank={20}`. 선택 곡의 "YouTube Music에서 듣기" 링크(`.music-link`) 포함 |
-| 시계열 훅 | `frontend/src/useVideoHistory.ts` | 세대 가드 포함 `/api/videos/{id}/history?hours=168` 로드 — 위 두 패널이 공유 |
+| 영상 시계열 패널 | `frontend/src/components/VideoSeriesPanel.tsx` | "시계열 추이" 화면 — Top30 영상 셀렉터(`/api/trending?scope=all`) + `PeriodToggle`(기본 168h) 시계열 차트. 구 추이 분석 탭 흐름 복원 |
+| 차트 시계열 패널 | `frontend/src/components/ChartSeriesPanel.tsx` | 같은 화면의 "YouTube Music 시계열" 패널 — `/api/home`의 chart 행으로 차트+곡 셀렉터 구성. `/api/charts/{chartId}/videos/{videoId}/history` 기반 시계열 차트(`PeriodToggle` 기본 168h, `maxRank={20}`). 선택 곡의 "YouTube Music에서 듣기" 링크(`.music-link`) 포함 |
+| 기간 토글 | `frontend/src/components/PeriodToggle.tsx` | 두 시계열 패널이 공유하는 알약 토글(`.period-toggle` 캡슐, `.period-btn.active`는 액센트 채움) — 24시간/일주일/한 달 = 24/168/720시간 |
+| 시계열 훅 | `frontend/src/useVideoHistory.ts` | 세대 가드 포함 `/api/videos/{id}/history` 로드 — `useVideoHistory(videoId, hours)`로 파라미터화(기본 168). 위 두 패널이 공유 |
 | 추이 패널 | `frontend/src/components/TrendsPanel.tsx` | 카테고리 점유율 스택 AreaChart + 진입/이탈 BarChart(`hours=48`) |
 | 브리핑 패널 | `frontend/src/components/BriefPanel.tsx` | LLM 3버튼 패널(오늘의 브리핑/어제와 비교/추이 리포트) — `GET /api/brief/stream` 스트리밍 소비. 파이프라인 트레이스(`.brief-steps` — 실행 중 ⋯/완료 ✓/실패 ✗ + ms), rAF 배칭 마크다운 스트리밍, in-band error 시 부분 결과 경고(`.brief-error`), 503 잠금(`.brief-locked`). LLM 본문은 마크다운, 상태/오류 문구는 평문 렌더 |
 | 모달 셸 | `frontend/src/components/Modal.tsx` | 공통 다이얼로그 — `role="dialog"`, 배경 클릭·Escape 닫기 |
-| 스타일 토큰 | `frontend/src/styles.css` | `[data-theme]` CSS 변수 세트 10종(기본 `neon-hunter`, 라이트는 `cotton-candy`) + 파생 별칭(`--bg-elevated`, `--border` 등). 제목 그라디언트 액센트 바(`.row h2::before`/`.panel h2::before`, 3px accent→accent2)와 공용 `.ai-chip` 텍스트 칩 포함 |
+| 스타일 토큰 | `frontend/src/styles.css` | `[data-theme]` CSS 변수 세트 10종(기본 `neon-hunter`, 라이트는 `cotton-candy`) + 파생 별칭(`--bg-elevated`, `--border` 등). 제목 그라디언트 액센트 바(`.row h2::before`/`.panel h2::before`, 3px accent→accent2)와 공용 `.ai-chip` 텍스트 칩 포함. 나눔스퀘어 자체 호스팅 `@font-face` 3종(R=400, B=500-700, EB=800-900, `font-display: swap`)이 `font-family` 스택 최우선 |
 | 차트 팔레트 | `frontend/src/chartColors.ts` | 테마 무관 고정 8색 팔레트. `seriesAccent`, `enteredColor`/`exitedColor` |
 | 테마 전환 | `frontend/src/theme.ts`, `frontend/src/themes.ts` | 루트 요소 `data-theme` + localStorage `yt-theme`. 스와치 hex 사본은 `themes.ts`에 있다(`styles.css`와 동기 유지). localStorage 불가 시 조용히 무시 |
 
 차트 인벤토리(전부 recharts):
 
 - `TrendsPanel` — `/api/trends/categories?hours=48` 기반 점유율 스택 AreaChart + 진입/이탈 BarChart
-- `HistoryCharts` — 순위 LineChart(Y 반전, 도메인 1–`maxRank`, 기본 30)와 조회수 LineChart(로그/선형 토글). 렌더 위치는 세 곳 — `SelectedTrend`(히어로 아래)와 `VideoSeriesPanel`(둘 다 `useVideoHistory` 경유 `/api/videos/{id}/history?hours=168`), `ChartSeriesPanel`(`/api/charts/{chartId}/videos/{videoId}/history?hours=72`, `maxRank={20}` — 차트 밖 시각은 null 포인트라 끊긴 선으로 표시)
+- `HistoryCharts` — 순위 LineChart(Y 반전, 도메인 1–`maxRank`, 기본 30)와 조회수 LineChart(로그/선형 토글). 렌더 위치는 세 곳 — `SelectedTrend`(히어로 아래, 168h 고정)와 `VideoSeriesPanel`(`PeriodToggle` 선택 시간, 둘 다 `useVideoHistory` 경유 `/api/videos/{id}/history`), `ChartSeriesPanel`(`/api/charts/{chartId}/videos/{videoId}/history`, `PeriodToggle` 기본 168h, `maxRank={20}` — 차트 밖 시각은 포인트 자체가 없어 선이 끊김)
 - 계열 색은 `chartColors.ts` 고정 팔레트를 쓰고, 차트 크롬(그리드·축·툴팁)은 테마 CSS 변수를 쓴다
 
 ### 3. 주요 결정
@@ -139,6 +142,7 @@ SPA의 프레젠테이션 계층이다(톱바 로고·페이지 타이틀은 "YO
 - 상단 메뉴는 라우터 없이 기존 탭 룩(`.nav-tab.active` 액센트 언더라인)을 유지한다: `view` 상태 하나가 3화면을 전환하고, 전환 시마다 최상단으로 스크롤하며, 서브 화면은 `.page` 컨테이너(구 `.bottom`에서 개명)에 놓인다. 60초 홈 폴링은 활성 화면과 무관하게 돈다.
 - 사이드바와 포커스 뷰는 새 시각 언어를 더하지 않는다: 사이드바 항목은 행 제목의 수식을 걷어낸 짧은 라벨(`sideLabel`)이고, 포커스 뷰는 어떤 주제든 `top10` 빅넘버 행 스타일을 재사용해 TOP 20을 보여준다 — 하나의 스트립 레이아웃이 홈과 포커스를 모두 담당한다.
 - UI는 설계상 이모지를 쓰지 않는다: 백엔드 행 제목이 평문으로 온다("지금 한국 급상승 TOP 10", "조회수 급증 중", "오늘 첫 진입", "순위 역주행", "YouTube Music · …" 차트 제목 5행, "힐링이 필요할 때"/"도파민 충전소", 스포트라이트 제목 "{이름} 인기 영상", 분야명 원문, "미국은 지금" — "추정" 수식은 제목이 아니라 AI 행 힌트에 있다). 인사이트 칩에도 이모지가 없고, 프론트 라벨("테마", "내 취향 찾기", "홈", 태깅 안내문)도 이모지를 걷어냈다. 시각적 앵커는 제목 그라디언트 바, `.side-head` 그룹 헤더, `.ai-chip` 텍스트 칩(히어로 줄 "AI", 팝오버 "AI 브리핑" — `.pv-ai-label` 삭제)이 담당한다.
+- 타이포그래피는 자체 호스팅 나눔스퀘어 웹폰트다: `src/assets/fonts/`의 woff2 3종을 가중치 400/500-700/800-900에 매핑하고 `font-display: swap`(시스템 폰트 선표시 후 교체)을 쓴다. Vite가 해시 자산으로 번들해 CloudFront/ALB 경계 안에서 외부 폰트 CDN 없이 서빙된다. 네이버 나눔글꼴 라이선스는 웹 임베딩을 허용한다.
 
 ### 4. 코드 포인터
 - `frontend/src/App.tsx` — 화면 구성, 폴링·세대 가드, 선택 카드 상태, 모달 상태
