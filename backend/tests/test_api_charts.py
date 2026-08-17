@@ -31,25 +31,24 @@ def test_chart_history_rejects_unknown_chart(table):
 
 def test_chart_history_hours_validation_follows_contract(table):
     client, _ = make_client(table)
-    res = client.get("/api/charts/songs/videos/v1/history?hours=96")
+    res = client.get("/api/charts/songs/videos/v1/history?hours=721")
     assert res.status_code == 400
     assert res.json() == {"error": "잘못된 요청입니다"}
 
 
-def test_chart_history_tracks_rank_and_absence_as_null(table):
+def test_chart_history_reads_chart_points_over_a_month(table):
     client, store = make_client(table)
-    store.put_snapshot("chart-songs", NOW - timedelta(hours=2),
-                       [card("song-a", 3, views=100)])
-    store.put_snapshot("chart-songs", NOW - timedelta(hours=1),
-                       [card("song-b", 1, views=999)])  # song-a 차트 아웃
-    store.put_snapshot("chart-songs", NOW, [card("song-a", 1, views=200)])
+    for off, rank, views in ((600, 3, 100), (1, 2, 150), (0, 1, 200)):
+        ts = NOW - timedelta(hours=off)
+        store.put_chart_points("songs", ts.strftime("%Y-%m-%dT%H"), ts,
+                               [{"videoId": "song-a", "rank": rank, "views": views}])
 
-    body = client.get("/api/charts/songs/videos/song-a/history?hours=4").json()
+    body = client.get("/api/charts/songs/videos/song-a/history?hours=720").json()
     assert body["chartId"] == "songs"
-    ranks = [p["rank"] for p in body["points"]]
-    views = [p["views"] for p in body["points"]]
-    assert ranks == [3, None, 1]     # 부재 시각은 null — 실측값과 혼용 금지
-    assert views == [100, None, 200]
+    assert [p["rank"] for p in body["points"]] == [3, 2, 1]
+    # 기본 168시간 창은 600시간 전 포인트를 포함하지 않는다
+    body = client.get("/api/charts/songs/videos/song-a/history").json()
+    assert [p["rank"] for p in body["points"]] == [2, 1]
 
 
 def test_chart_history_empty_without_snapshots(table):

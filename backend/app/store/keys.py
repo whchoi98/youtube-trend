@@ -42,6 +42,12 @@ def vid_pk(video_id: str) -> str:
     return f"VID#{video_id}"
 
 
+def chart_vid_pk(chart: str, video_id: str) -> str:
+    """YouTube Music 차트 곡별 시계열. 차트 순위와 KR 급상승 순위가 충돌하지
+    않도록 VID#와 분리된 pk를 쓴다."""
+    return f"CVID#{chart}#{video_id}"
+
+
 def report_pk(kind: str, scope: str) -> str:
     return f"REPORT#{kind}#{scope}"
 

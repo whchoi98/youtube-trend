@@ -3,6 +3,7 @@ import { ApiError, fetchJson } from '../api'
 import type { Card, Loadable } from '../types'
 import { useVideoHistory } from '../useVideoHistory'
 import { HistoryCharts } from './HistoryCharts'
+import { PeriodToggle } from './PeriodToggle'
 
 function errMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.body.error ?? err.message : fallback
@@ -13,8 +14,9 @@ function errMessage(err: unknown, fallback: string): string {
 export function VideoSeriesPanel() {
   const [videos, setVideos] = useState<Loadable<Card[]>>({ status: 'loading' })
   const [selectedId, setSelectedId] = useState('')
+  const [hours, setHours] = useState(168)
   const videosSeqRef = useRef(0)
-  const { history, retry } = useVideoHistory(selectedId)
+  const { history, retry } = useVideoHistory(selectedId, hours)
 
   const loadVideos = useCallback(() => {
     const seq = ++videosSeqRef.current
@@ -66,6 +68,7 @@ export function VideoSeriesPanel() {
               </option>
             ))}
           </select>
+          <PeriodToggle value={hours} onChange={setHours} />
         </div>
       )}
 

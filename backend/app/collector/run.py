@@ -87,6 +87,11 @@ def collect_all(store, yt, now):
             continue
         if cards and store.put_snapshot(scope, now, cards):
             written += 1
+        # 곡별 시계열 포인트 — 장기(한 달) 추이 조회용 소형 아이템
+        if cards:
+            store.put_chart_points(suffix, bucket, now, [
+                {"videoId": c["videoId"], "rank": c["rank"], "views": c["views"]}
+                for c in cards])
 
     # 6) 채널 분석 — 전체 Top30 기여 채널의 구독자·총조회수 결합 랭킹
     chan_ids = list({c.get("channelId") for c in all_cards if c.get("channelId")})

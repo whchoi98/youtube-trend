@@ -1,4 +1,27 @@
 /* ==========================================================================
+   나눔스퀘어(NanumSquare) 자체 호스팅 — 네이버 나눔글꼴 라이선스(OFL 계열,
+   웹폰트 임베딩 허용). 가중치 매핑: 400=R, 700=B, 800=EB (600은 700으로 매칭).
+   ========================================================================== */
+@font-face {
+  font-family: 'NanumSquare';
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/NanumSquareR.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'NanumSquare';
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./assets/fonts/NanumSquareB.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'NanumSquare';
+  font-weight: 800 900;
+  font-display: swap;
+  src: url('./assets/fonts/NanumSquareEB.woff2') format('woff2');
+}
+
+/* ==========================================================================
    Trend Radar — 테마 10종 토큰. 각 테마는 CSS 변수 세트 하나다.
    스와치 미리보기 hex는 src/themes.ts에 사본이 있다(동기 유지).
    ========================================================================== */
@@ -62,7 +85,7 @@
   --hero-accent: var(--accent);
   --hero-shadow: rgba(0, 0, 0, 0.65);
 
-  font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: 'NanumSquare', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 
 /* ---------- 베이스 ---------- */
@@ -613,6 +636,21 @@ button { font-family: inherit; cursor: pointer; }
 .theme-card.sel { border-color: var(--accent); }
 .sw { display: flex; gap: 3px; }
 .sw i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+
+/* 시계열 조회 기간 토글 */
+.period-toggle {
+  display: inline-flex; gap: 0;
+  border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+  border-radius: 999px; overflow: hidden; flex: 0 0 auto;
+}
+.period-btn {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 12px; font-weight: 700; padding: 7px 14px;
+}
+.period-btn:hover { color: var(--text); }
+.period-btn.active {
+  background: var(--accent); color: var(--on-cta);
+}
 
 /* 영상 시계열 패널 */
 .video-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }

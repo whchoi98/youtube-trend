@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from app.collector.run import collect_all
 from app.collector.youtube import UpstreamError
 from app.store.table import TrendStore
@@ -102,3 +102,11 @@ def test_collect_writes_channel_ranking(table):
     assert chans[0]["channelId"] == "chan-a" and chans[0]["rank"] == 1
     assert chans[0]["subscribers"] == 1000
     assert chans[0]["topVideoId"] == "a"
+
+
+def test_collect_writes_chart_points_for_month_series(table):
+    store = TrendStore(table)
+    collect_all(store, FakeYT(), NOW)
+    pts = store.chart_video_history("songs", "pl-PL4fGSI1",
+                                    NOW - timedelta(hours=2), NOW)
+    assert len(pts) == 1 and pts[0]["rank"] == 1

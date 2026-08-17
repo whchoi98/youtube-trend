@@ -4,7 +4,7 @@ import type { HistoryPoint, Loadable } from './types'
 
 /** 영상 시계열(168h) 로드 훅 — 세대 토큰으로 늦은 응답·늦은 실패를 폐기한다.
  *  영상 시계열 패널과 선택 콘텐츠 추이 섹션이 공유한다. */
-export function useVideoHistory(videoId: string) {
+export function useVideoHistory(videoId: string, hours = 168) {
   const [history, setHistory] = useState<Loadable<HistoryPoint[]>>({ status: 'loading' })
   const seqRef = useRef(0)
 
@@ -12,7 +12,7 @@ export function useVideoHistory(videoId: string) {
     const seq = ++seqRef.current
     setHistory({ status: 'loading' })
     fetchJson<{ videoId: string; points: HistoryPoint[] }>(
-      `/api/videos/${encodeURIComponent(id)}/history?hours=168`,
+      `/api/videos/${encodeURIComponent(id)}/history?hours=${hours}`,
     )
       .then((res) => {
         if (seq !== seqRef.current) return
@@ -27,12 +27,12 @@ export function useVideoHistory(videoId: string) {
             : '시계열을 불러오지 못했습니다',
         })
       })
-  }, [])
+  }, [hours])
 
   useEffect(() => {
     if (videoId) load(videoId)
     return () => {
-      seqRef.current += 1 // 언마운트·영상 교체 후 도착하는 응답 무효화
+      seqRef.current += 1 // 언마운트·영상/기간 교체 후 도착하는 응답 무효화
     }
   }, [videoId, load])
 

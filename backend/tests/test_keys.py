@@ -18,6 +18,7 @@ def test_pk_builders():
     assert keys.snap_pk("all") == "SNAP#ALL"
     assert keys.snap_pk("10") == "SNAP#CAT#10"
     assert keys.vid_pk("abc123") == "VID#abc123"
+    assert keys.chart_vid_pk("songs", "abc123") == "CVID#songs#abc123"
     assert keys.report_pk("brief-now", "all") == "REPORT#brief-now#all"
     assert keys.snap_pk("rgn-US") == "SNAP#RGN#US"
     assert keys.snap_pk("spot-aws") == "SNAP#SPOT#aws"

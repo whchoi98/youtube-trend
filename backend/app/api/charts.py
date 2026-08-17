@@ -1,8 +1,8 @@
 """YouTube Music 차트 시계열 API.
 
-차트 스냅샷(시간별 저장)에서 특정 곡의 순위/조회수 추이를 계산한다 —
-별도 시계열 쓰기 없이 스냅샷 범위 조회로 파생한다. 곡이 그 시각 차트에
-없으면 rank/views 모두 null(부재)이다 — 실측 0과 혼용하지 않는다.
+수집기가 차트 곡별로 적재한 소형 시계열 포인트(CVID#)를 조회한다 — 스냅샷
+범위 파생(버킷당 ~14KB)과 달리 아이템이 작아 한 달(720h) 조회도 가볍다.
+곡이 그 시각 차트에 없으면 해당 버킷 포인트 자체가 없다(선이 끊김).
 """
 from datetime import datetime, timedelta, timezone
 
@@ -15,26 +15,17 @@ from app.charts import MUSIC_CHARTS
 router = APIRouter(prefix="/api")
 
 VALID_CHART_IDS = {suffix for suffix, _pid, _title in MUSIC_CHARTS}
-# 차트 스냅샷은 Top20 카드 전체(JSON)라 버킷당 ~14KB — DynamoDB Query 1MB
-# 한도를 넘지 않도록 72시간으로 캡한다(기존 96 캡과 같은 근거, 항목이 커서 더 낮음)
-MAX_HOURS = 72
+# 곡별 포인트는 소형 아이템이라 스냅샷 TTL(30일)과 같은 한 달까지 허용
+MAX_HOURS = 720
 
 
 @router.get("/charts/{chart_id}/videos/{video_id}/history")
 def chart_video_history(chart_id: str, video_id: str,
-                        hours: int = Query(default=48, ge=2, le=MAX_HOURS),
+                        hours: int = Query(default=168, ge=2, le=MAX_HOURS),
                         store=Depends(get_store)):
     if chart_id not in VALID_CHART_IDS:
         return JSONResponse({"error": "지원하지 않는 차트입니다"}, status_code=400)
     now = datetime.now(timezone.utc)
-    snaps = store.snapshots_range(f"chart-{chart_id}",
-                                  now - timedelta(hours=hours), now)
-    points = []
-    for s in snaps:
-        hit = next((c for c in s["items"] if c.get("videoId") == video_id), None)
-        points.append({
-            "ts": s["bucket"],
-            "rank": hit.get("rank") if hit else None,
-            "views": hit.get("views") if hit else None,
-        })
+    points = store.chart_video_history(chart_id, video_id,
+                                       now - timedelta(hours=hours), now)
     return {"chartId": chart_id, "videoId": video_id, "points": points}

@@ -79,7 +79,7 @@ npm run dev
 ### 5. 검증
 
 ```bash
-# 백엔드 테스트 (129개)
+# 백엔드 테스트 (130개)
 cd backend && .venv/bin/pytest tests/ -q
 
 # 프론트엔드 게이트 (타입 체크 + 빌드)
@@ -103,7 +103,7 @@ cd infra && npx aws-cdk@2 synth
 
 - 브랜치 네이밍: `feat/`, `fix/`, `docs/`, `refactor/`
 - 커밋 규약: Conventional Commits
-- 머지 전 게이트: 백엔드 pytest 129개 전체 통과 + 프론트 `tsc --noEmit && npm run build` 통과
+- 머지 전 게이트: 백엔드 pytest 130개 전체 통과 + 프론트 `tsc --noEmit && npm run build` 통과
 
 ## 배포
 

@@ -3,6 +3,7 @@ import { ApiError, fetchJson } from '../api'
 import type { HistoryPoint, HomeData, HomeRow, Loadable } from '../types'
 import { HistoryCharts } from './HistoryCharts'
 import { musicUrl } from '../format'
+import { PeriodToggle } from './PeriodToggle'
 
 function errMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.body.error ?? err.message : fallback
@@ -15,6 +16,7 @@ export function ChartSeriesPanel() {
   const [charts, setCharts] = useState<Loadable<HomeRow[]>>({ status: 'loading' })
   const [chartId, setChartId] = useState('')
   const [videoId, setVideoId] = useState('')
+  const [hours, setHours] = useState(168)
   const [history, setHistory] = useState<Loadable<HistoryPoint[]>>({ status: 'loading' })
   const chartsSeqRef = useRef(0)
   const histSeqRef = useRef(0)
@@ -59,7 +61,7 @@ export function ChartSeriesPanel() {
     const seq = ++histSeqRef.current
     setHistory({ status: 'loading' })
     fetchJson<{ points: HistoryPoint[] }>(
-      `/api/charts/${encodeURIComponent(cid)}/videos/${encodeURIComponent(vid)}/history?hours=72`,
+      `/api/charts/${encodeURIComponent(cid)}/videos/${encodeURIComponent(vid)}/history?hours=${hours}`,
     )
       .then((res) => {
         if (seq !== histSeqRef.current) return
@@ -69,7 +71,7 @@ export function ChartSeriesPanel() {
         if (seq !== histSeqRef.current) return
         setHistory({ status: 'error', message: errMessage(err, '차트 추이를 불러오지 못했습니다') })
       })
-  }, [])
+  }, [hours])
 
   useEffect(() => {
     if (chartId && videoId) loadHistory(chartId, videoId)
@@ -103,6 +105,7 @@ export function ChartSeriesPanel() {
             </option>
           ))}
         </select>
+        <PeriodToggle value={hours} onChange={setHours} />
         {videoId && (
           <a className="music-link" href={musicUrl(videoId)} target="_blank" rel="noopener noreferrer">
             YouTube Music에서 듣기

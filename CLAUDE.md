@@ -8,7 +8,7 @@ YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비
 
 ## Tech Stack
 
-- Backend: Python 3.12 + FastAPI (`backend/` — pytest 129개, venv는 `backend/.venv`)
+- Backend: Python 3.12 + FastAPI (`backend/` — pytest 130개, venv는 `backend/.venv`)
 - Frontend: React 18 + Vite + TypeScript (`frontend/` — recharts, react-markdown)
 - IaC: AWS CDK Python (`infra/` — 스택 `YoutubeTrendsStack`, VPC existing/new 2모드)
 - Container: Docker 멀티스테이지 (`backend/Dockerfile`, 빌드 컨텍스트 = 저장소 루트)
@@ -31,7 +31,7 @@ backend/            - FastAPI 앱 + 테스트
   app/charts.py     - YouTube Music 공식 차트 5종 정의(재생목록 id·제목)
   app/spotlights.py - 채널 스포트라이트 3종 정의(AWS·Anthropic·OpenAI 핸들·제목)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
-  tests/            - pytest 129개 (moto 기반)
+  tests/            - pytest 130개 (moto 기반)
 frontend/           - React SPA (로고 YOUTUBE TREND MONITOR — 상단 메뉴 3화면:
                       홈 / 시계열 추이 / 점유율·리포트)
   src/components/   - Hero(선택 빌보드), Row(타일/순위 칩/배지), Sidebar(주제 TOP 20),
@@ -47,7 +47,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 
 ## Key Commands
 
-- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (129개)
+- 백엔드 테스트: `cd backend && .venv/bin/pytest tests/ -q` (130개)
 - 프론트 게이트: `cd frontend && npx tsc --noEmit && npm run build`
 - 배포: `./scripts/deploy.sh`
 - 스모크: `./scripts/smoke.sh <SiteUrl>`
@@ -56,7 +56,7 @@ docs/               - 문서 (reference/ 구현 레퍼런스, decisions/ ADR, ru
 ## API Surface
 
 - `GET /api/home` — 홈 조합: 히어로(1위+차트인 시간)·인사이트 칩·채널 랭킹(channels)·행 구성(top10/accel/new/climb/chart×5/topic/vibe/category/region/spotlight)·태그 병합
-- `GET /api/charts/{chartId}/videos/{videoId}/history?hours` — YouTube Music 차트 곡 시계열 (hours 2~72 — 차트 스냅샷이 커서 96 캡보다 낮음)
+- `GET /api/charts/{chartId}/videos/{videoId}/history?hours` — YouTube Music 차트 곡 시계열 (hours 2~720 — 수집 시 적재하는 곡별 소형 포인트 조회)
 - `POST /api/quiz {mood, time, style}` — 취향 퀴즈 → 유형명 + 맞춤 추천 카드 (결정적, LLM 미호출)
 - `GET /api/trending?scope=all|{catId}` — 전체 Top30 / 카테고리 Top10
 - `GET /api/categories` — 카테고리 목록

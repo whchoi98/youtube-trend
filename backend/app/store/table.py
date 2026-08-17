@@ -118,6 +118,28 @@ class TrendStore:
                     "expireAt": keys.ttl_epoch(now, SNAPSHOT_TTL_DAYS),
                 })
 
+    def put_chart_points(self, chart, bucket, now, points):
+        """차트 곡별 시계열 포인트 — 한 달(720h) 추이 조회를 스냅샷 범위
+        조회(버킷당 ~14KB) 대신 곡 단위 소형 아이템 Query로 가능하게 한다."""
+        with self.table.batch_writer() as bw:
+            for p in points:
+                bw.put_item(Item={
+                    "pk": keys.chart_vid_pk(chart, p["videoId"]),
+                    "sk": keys.ts_sk(bucket),
+                    "rank": p.get("rank"), "views": p["views"],
+                    "expireAt": keys.ttl_epoch(now, SNAPSHOT_TTL_DAYS),
+                })
+
+    def chart_video_history(self, chart, video_id, since, until):
+        res = self.table.query(
+            KeyConditionExpression=Key("pk").eq(keys.chart_vid_pk(chart, video_id))
+            & Key("sk").between(keys.ts_sk(keys.hour_bucket(since)),
+                                keys.ts_sk(keys.hour_bucket(until))),
+        )
+        return [{"ts": keys.bucket_from_sk(i["sk"]),
+                 "rank": _int(i.get("rank"), default=None) if i.get("rank") is not None else None,
+                 "views": _int(i.get("views"))} for i in res["Items"]]
+
     def video_history(self, video_id, since, until):
         res = self.table.query(
             KeyConditionExpression=Key("pk").eq(keys.vid_pk(video_id))
