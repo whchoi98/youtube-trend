@@ -623,6 +623,15 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--bg2); color: var(--text);
 }
 
+.music-link {
+  display: inline-flex; align-items: center;
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg2));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text); text-decoration: none; white-space: nowrap;
+}
+.music-link:hover { border-color: var(--accent); }
+
 /* 영상 상세 모달 */
 .detail { display: flex; flex-direction: column; gap: 12px; }
 .detail-title { font-size: 16px; line-height: 1.35; margin-bottom: 0; }

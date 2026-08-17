@@ -17,6 +17,7 @@ from app.categories import CATEGORIES
 from app.charts import MUSIC_CHARTS
 from app.derive import with_derived
 from app.regions import REGIONS
+from app.spotlights import SPOTLIGHTS
 from app.store import keys
 
 router = APIRouter(prefix="/api")
@@ -82,8 +83,11 @@ def home(request: Request, store=Depends(get_store),
         if rgot is not None:
             region_items[code] = home_logic.merge_tags(rgot[1], tags)
 
-    sgot = _derived_items(store, "spot-aws", now)
-    spotlight_items = home_logic.merge_tags(sgot[1], tags) if sgot else None
+    spotlight_items = {}
+    for suffix, _handle, _title in SPOTLIGHTS:
+        sgot = _derived_items(store, f"spot-{suffix}", now)
+        if sgot is not None:
+            spotlight_items[suffix] = home_logic.merge_tags(sgot[1], tags)
 
     chart_items = {}
     for suffix, _pid, _title in MUSIC_CHARTS:

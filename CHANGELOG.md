@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a YouTube Music time-series panel on the trends screen: pick a chart and a song to see hourly rank/views derived from chart snapshots (`GET /api/charts/{chartId}/videos/{videoId}/history`, hours capped at 72)
 - Add "first entry today" and "rank climbers" rows plus AI-mood rows (healing / dopamine) in place of the removed age-group rows; sidebar font weight increased
 
+- Add Anthropic and OpenAI channel popular-video rows alongside AWS (channel spotlights generalized in app/spotlights.py, per-channel failure isolation)
+- Route YouTube Music content to music.youtube.com: selecting a chart tile switches the hero CTA to "Listen on YouTube Music", and the chart time-series panel gains a listen link (regular videos keep youtube.com)
+
 ### Changed
 - Refine the UI toward a more premium look: emoji removed from row titles, insights, sidebar, and buttons in favor of gradient accent bars on headings, sidebar section headers, and a small "AI" text chip
 - Replace the three-tab layout with a Netflix-style home, then reintroduce a top menu in the classic tab style: home / video time-series / share·report screens (charts and LLM briefing live on their own screens)
@@ -95,6 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 추이 화면에 YouTube Music 시계열 패널 추가: 차트·곡을 골라 차트 스냅샷에서 파생한 시간별 순위/조회수 확인(`GET /api/charts/{chartId}/videos/{videoId}/history`, hours 상한 72)
 - 연령대 행을 제거하고 "오늘 첫 진입"·"순위 역주행" 행과 AI 무드 행(힐링/도파민)으로 대체, 사이드바 폰트 굵기 강화
+
+- AWS 외 Anthropic·OpenAI 채널 인기 영상 행 추가(채널 스포트라이트를 app/spotlights.py로 일반화, 채널별 실패 격리)
+- YouTube Music 콘텐츠는 music.youtube.com으로 연결: 차트 타일 선택 시 히어로 버튼이 "YouTube Music에서 듣기"로 전환, 차트 시계열 패널에 듣기 링크 추가(일반 영상은 youtube.com 유지)
 
 ### Changed
 - UI 고급화: 행 제목·인사이트·사이드바·버튼의 이모지를 제거하고 제목 그라디언트 액센트 바, 사이드바 섹션 헤더, "AI" 텍스트 칩으로 대체

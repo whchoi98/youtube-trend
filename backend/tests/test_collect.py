@@ -32,7 +32,7 @@ class FakeYT:
     def channel_top(self, handle, max_results):
         if self.fail_spotlight:
             raise UpstreamError(403)
-        return [card("aws-1", 1, "28")]
+        return [card(f"top-{handle}", 1, "28")]
 
     def playlist_top(self, playlist_id, max_results):
         return [card(f"pl-{playlist_id[:8]}", 1, "10")]
@@ -72,7 +72,9 @@ def test_collect_writes_regions_and_spotlight(table):
     result = collect_all(store, FakeYT(), NOW)
     assert result["written"] >= 14  # 전체 1 + 카테고리 8 + 국가 4 + 스포트라이트 1
     assert store.latest_snapshot("rgn-US")["items"][0]["videoId"] == "US-1"
-    assert store.latest_snapshot("spot-aws")["items"][0]["videoId"] == "aws-1"
+    assert store.latest_snapshot("spot-aws")["items"][0]["videoId"] == "top-AWSKorea"
+    assert store.latest_snapshot("spot-anthropic")["items"][0]["videoId"] == "top-anthropic-ai"
+    assert store.latest_snapshot("spot-openai")["items"][0]["videoId"] == "top-OpenAI"
 
 
 def test_failed_region_and_spotlight_do_not_block_others(table):

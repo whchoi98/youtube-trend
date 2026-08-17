@@ -12,7 +12,7 @@ function sideLabel(row: HomeRow): string {
   if (row.kind === 'top10') return '전체 급상승'
   if (row.kind === 'accel') return '조회수 급증'
   if (row.kind === 'chart') return row.title.replace('YouTube Music · ', '')
-  if (row.kind === 'spotlight') return 'AWS Korea'
+  if (row.kind === 'spotlight') return row.title.replace(' 인기 영상', '')
   if (row.kind === 'vibe') return row.title.replace('이 필요할 때', '').replace(' 충전소', '')
   return row.title
     .replace('은 지금', '')

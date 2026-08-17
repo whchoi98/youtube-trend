@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, fetchJson } from '../api'
 import type { HistoryPoint, HomeData, HomeRow, Loadable } from '../types'
 import { HistoryCharts } from './HistoryCharts'
+import { musicUrl } from '../format'
 
 function errMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.body.error ?? err.message : fallback
@@ -102,6 +103,11 @@ export function ChartSeriesPanel() {
             </option>
           ))}
         </select>
+        {videoId && (
+          <a className="music-link" href={musicUrl(videoId)} target="_blank" rel="noopener noreferrer">
+            YouTube Music에서 듣기
+          </a>
+        )}
       </div>
 
       {history.status === 'loading' && <p className="muted">추이 불러오는 중…</p>}

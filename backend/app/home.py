@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from app.categories import CATEGORIES, CATEGORY_NAMES
 from app.charts import MUSIC_CHARTS
 from app.regions import REGIONS, REGION_TITLES
+from app.spotlights import SPOTLIGHTS
 
 TOPIC_ROW_MIN = 3      # 주제/무드 행 최소 타일 수 — 이보다 적으면 행이 초라하다
 TOPIC_ROW_MAX = 4      # 주제 행 최대 개수
@@ -64,10 +65,10 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
     """홈 행 구성. 인자들은 파생·태그 병합이 끝난 카드 목록이다.
 
     순서: top10 → accel → new(첫 진입) → climb(역주행) → chart(YT Music 5종)
-    → topic(태그) → vibe(무드 태그) → 분야 → 국가 → spotlight(AWS, 맨 하단).
+    → topic(태그) → vibe(무드 태그) → 분야 → 국가 → spotlight(채널들, 맨 하단).
     빈 행은 넣지 않는다. top10 행은 사이드바 주제 뷰(TOP 20)를 위해 20개까지
-    싣는다 — 홈 스트립은 프론트가 10개로 잘라 표시한다. chart_items는
-    {접미사: 카드 목록} dict다.
+    싣는다 — 홈 스트립은 프론트가 10개로 잘라 표시한다. chart_items와
+    spotlight_items는 {접미사: 카드 목록} dict다.
     """
     rows = []
     if all_items:
@@ -128,10 +129,12 @@ def build_rows(all_items, cat_items, region_items=None, spotlight_items=None,
             rows.append({"kind": "region", "regionCode": code,
                          "title": REGION_TITLES[code], "items": cards})
 
-    # AWS 스포트라이트는 맨 하단에 배치한다
-    if spotlight_items:
-        rows.append({"kind": "spotlight", "title": "AWS 인기 영상",
-                     "items": spotlight_items})
+    # 채널 스포트라이트들은 맨 하단에 정의 순서대로 배치한다
+    for suffix, _handle, title in SPOTLIGHTS:
+        cards = (spotlight_items or {}).get(suffix)
+        if cards:
+            rows.append({"kind": "spotlight", "spotId": suffix,
+                         "title": title, "items": cards})
     return rows
 
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비스다. 넷플릭스형 홈(히어로 빌보드·가로 스트립 행·인사이트 칩·테마 10종·좌측 사이드바 주제 TOP 20 뷰), 전체 Top30/분야별 Top20(8개 카테고리), 조회수 급증 행, 국가별 랭킹(미·일·영·인 Top20), YouTube Music 공식 차트 5종, 지금 뜨는 채널 랭킹(구독자·총조회 결합), AWS Korea 채널 인기 영상(맨 하단), 오늘 첫 진입·순위 역주행 행, AI 태깅 기반 주제·무드 행, 취향 퀴즈 추천, 추이 분석(영상·YouTube Music 차트 시계열, 카테고리 점유율), LLM 브리핑/추이 리포트(SSE 스트리밍 + 마크다운 렌더)를 제공한다.
+YouTube Trends — YouTube KR 급상승 동영상을 수집·분석하는 서비스다. 넷플릭스형 홈(히어로 빌보드·가로 스트립 행·인사이트 칩·테마 10종·좌측 사이드바 주제 TOP 20 뷰), 전체 Top30/분야별 Top20(8개 카테고리), 조회수 급증 행, 국가별 랭킹(미·일·영·인 Top20), YouTube Music 공식 차트 5종, 지금 뜨는 채널 랭킹(구독자·총조회 결합), 채널 스포트라이트(AWS·Anthropic·OpenAI, 맨 하단), 오늘 첫 진입·순위 역주행 행, AI 태깅 기반 주제·무드 행, 취향 퀴즈 추천, 추이 분석(영상·YouTube Music 차트 시계열, 카테고리 점유율), LLM 브리핑/추이 리포트(SSE 스트리밍 + 마크다운 렌더)를 제공한다.
 
 라이브: https://d2y73ug3aaah05.cloudfront.net (2026-08-04 배포, 계정 종속 — 재배포 시 URL 변동)
 
@@ -29,6 +29,7 @@ backend/            - FastAPI 앱 + 테스트
   app/home.py       - 홈 행 구성·인사이트·퀴즈 추천 (순수 로직)
   app/regions.py    - 국가별 랭킹 대상(미·일·영·인)과 행 제목
   app/charts.py     - YouTube Music 공식 차트 5종 정의(재생목록 id·제목)
+  app/spotlights.py - 채널 스포트라이트 3종 정의(AWS·Anthropic·OpenAI 핸들·제목)
   app/tagging.py    - 수집 후 AI 태깅 파이프라인 (버킷당 Bedrock 1콜, 멱등)
   tests/            - pytest 129개 (moto 기반)
 frontend/           - React SPA (로고 YOUTUBE TREND MONITOR — 상단 메뉴 3화면:

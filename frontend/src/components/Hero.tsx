@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { HomeCard, HomeHero } from '../types'
-import { formatCount, youtubeUrl } from '../format'
+import { formatCount, musicUrl, youtubeUrl } from '../format'
 
 function maxresUrl(videoId: string): string {
   return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/maxresdefault.jpg`
@@ -9,9 +9,11 @@ function maxresUrl(videoId: string): string {
 /** 홈 최상단 히어로. 기본은 전체 1위 영상이고, 타일에서 콘텐츠를 선택하면
  *  넷플릭스 빌보드처럼 그 콘텐츠의 제목·카테고리·간단한 소개·링크로 바뀐다.
  *  maxres가 없는 영상(404)은 onError로 저장된 일반 썸네일로 폴백한다. */
-export function Hero({ hero, selected, onQuiz, onClear }: {
+export function Hero({ hero, selected, music, onQuiz, onClear }: {
   hero: HomeHero | null
   selected: HomeCard | null
+  /** 선택 콘텐츠가 YouTube Music 차트 유래면 뮤직 링크로 보낸다 */
+  music: boolean
   onQuiz: () => void
   onClear: () => void
 }) {
@@ -58,8 +60,13 @@ export function Hero({ hero, selected, onQuiz, onClear }: {
           {card.channel} · 조회 {formatCount(card.views)}{vph} · 좋아요 {formatCount(card.likes)}
         </div>
         <div className="hero-actions">
-          <a className="btn-play" href={youtubeUrl(card.videoId)} target="_blank" rel="noopener noreferrer">
-            ▶ 보러가기
+          <a
+            className="btn-play"
+            href={selected && music ? musicUrl(card.videoId) : youtubeUrl(card.videoId)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {selected && music ? '▶ YouTube Music에서 듣기' : '▶ 보러가기'}
           </a>
           {selected ? (
             <button type="button" className="btn-quiz" onClick={onClear}>

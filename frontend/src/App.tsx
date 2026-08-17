@@ -40,6 +40,8 @@ export default function App() {
   const [showTheme, setShowTheme] = useState(false)
   // 타일에서 선택한 콘텐츠 — 히어로가 넷플릭스 빌보드처럼 이 콘텐츠로 바뀐다
   const [selected, setSelected] = useState<HomeCard | null>(null)
+  // 선택 콘텐츠가 YouTube Music 차트 유래인지 — 히어로 링크를 뮤직으로 보낸다
+  const [selectedMusic, setSelectedMusic] = useState(false)
   // 사이드바에서 고른 주제 — null이면 일반 홈 행들, 아니면 TOP 20 포커스 뷰
   const [focus, setFocus] = useState<string | null>(null)
   // 하단 패널(점유율/브리핑)은 수동 새로고침 때만 remount로 재조회한다
@@ -81,8 +83,9 @@ export default function App() {
     setThemeState(id)
   }
 
-  const selectCard = (card: HomeCard) => {
+  const selectCard = (card: HomeCard, music = false) => {
     setSelected(card)
+    setSelectedMusic(music)
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
   }
@@ -154,6 +157,7 @@ export default function App() {
           <Hero
             hero={home.data.hero}
             selected={selected}
+            music={selectedMusic}
             onQuiz={() => setShowQuiz(true)}
             onClear={() => setSelected(null)}
           />
@@ -169,7 +173,10 @@ export default function App() {
             <Sidebar rows={home.data.rows} focus={focus} onSelect={setFocus} />
             <main className="rows">
               {focusRow ? (
-                <Row row={focusRow} onTile={selectCard} />
+                <Row
+                  row={focusRow}
+                  onTile={(c) => selectCard(c, focus?.startsWith('chart:') ?? false)}
+                />
               ) : (
                 <>
                   {quizRow && <Row row={quizRow} hint="퀴즈 맞춤" onTile={selectCard} />}
@@ -182,11 +189,11 @@ export default function App() {
                           : row.kind === 'accel' ? '시간당 증가 기준'
                             : row.kind === 'new' ? '기준선에 없던 신규 차트인'
                               : row.kind === 'climb' ? '순위 상승폭 기준'
-                                : row.kind === 'spotlight' ? 'AWS Korea 채널'
+                                : row.kind === 'spotlight' ? '공식 채널 인기 영상'
                                   : row.kind === 'chart' ? 'YouTube Music 공식 차트'
                                     : undefined
                       }
-                      onTile={selectCard}
+                      onTile={(c) => selectCard(c, row.kind === 'chart')}
                       limit={row.kind === 'top10' ? 10 : undefined}
                     />
                     {row.kind === channelAnchor && home.data.channels && home.data.channels.length > 0 && (

@@ -32,6 +32,7 @@ export interface HomeRow {
   categoryId?: string
   regionCode?: string
   chartId?: string
+  spotId?: string
   items: HomeCard[]
 }
 

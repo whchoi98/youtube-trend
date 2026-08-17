@@ -21,6 +21,11 @@ export function youtubeUrl(videoId: string): string {
   return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`
 }
 
+/** YouTube Music 재생 URL — 차트 유래 콘텐츠는 뮤직 앱으로 보낸다. */
+export function musicUrl(videoId: string): string {
+  return `https://music.youtube.com/watch?v=${encodeURIComponent(videoId)}`
+}
+
 /**
  * UTC 시 버킷 문자열("YYYY-MM-DDTHH")을 KST(UTC+9, DST 없음) 표기로 변환한다.
  * 예: "2026-08-04T15" -> "8/5 0시". Date를 +9h 이동시킨 뒤 getUTC* 접근자로 값을

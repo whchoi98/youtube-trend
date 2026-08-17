@@ -182,6 +182,7 @@ def test_home_includes_region_and_spotlight_rows(table):
     store.put_snapshot("all", NOW, [card("video-a", 1)])
     store.put_snapshot("rgn-US", NOW, [card("video-us", 1)])
     store.put_snapshot("spot-aws", NOW, [card("video-aws", 1)])
+    store.put_snapshot("spot-openai", NOW, [card("video-oai", 1)])
 
     body = client.get("/api/home").json()
     rows = {r["kind"]: r for r in body["rows"]}
@@ -189,8 +190,10 @@ def test_home_includes_region_and_spotlight_rows(table):
     assert rows["region"]["regionCode"] == "US"
     assert rows["region"]["title"] == "미국은 지금"
     assert rows["region"]["items"][0]["videoId"] == "video-us"
-    assert rows["spotlight"]["title"] == "AWS 인기 영상"
-    assert rows["spotlight"]["items"][0]["videoId"] == "video-aws"
+    spots = [r for r in body["rows"] if r["kind"] == "spotlight"]
+    assert [(r["spotId"], r["title"]) for r in spots] == [
+        ("aws", "AWS 인기 영상"), ("openai", "OpenAI 인기 영상")]
+    assert spots[0]["items"][0]["videoId"] == "video-aws"
     # 순서: AWS 스포트라이트가 맨 하단(국가 뒤)
     kinds = [r["kind"] for r in body["rows"]]
     assert kinds.index("region") < kinds.index("spotlight")

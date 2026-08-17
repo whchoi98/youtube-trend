@@ -6,13 +6,12 @@ from app.categories import CATEGORIES
 from app.charts import MUSIC_CHARTS
 from app.collector.youtube import UpstreamError
 from app.regions import REGIONS
+from app.spotlights import SPOTLIGHTS
 from app.store import keys
 
 log = logging.getLogger(__name__)
 
-# 채널 스포트라이트 — AWS Korea 공식 채널 인기 영상 랭킹
-SPOTLIGHT_HANDLE = "AWSKorea"
-SPOTLIGHT_SCOPE = "spot-aws"
+# 채널 스포트라이트 목록은 app/spotlights.py 단일 정의를 따른다
 # YouTube Music 공식 차트 목록은 app/charts.py 단일 정의를 따른다
 # 분야/국가/스포트라이트 랭킹 깊이 — 사이드바 주제 뷰가 TOP 20을 보여준다
 RANK_DEPTH = 20
@@ -65,14 +64,16 @@ def collect_all(store, yt, now):
         if cards and store.put_snapshot(scope, now, cards):
             written += 1
 
-    # 4) 채널 스포트라이트 — AWS Korea 최근 업로드의 조회수 랭킹
-    try:
-        cards = yt.channel_top(SPOTLIGHT_HANDLE, RANK_DEPTH)
-    except UpstreamError as e:
-        log.warning("collect: spotlight failed status=%s", e.status)
-        skipped.append(SPOTLIGHT_SCOPE)
-    else:
-        if cards and store.put_snapshot(SPOTLIGHT_SCOPE, now, cards):
+    # 4) 채널 스포트라이트 — 공식 채널별 최근 업로드의 조회수 랭킹, 채널별 실패 격리
+    for suffix, handle, _title in SPOTLIGHTS:
+        scope = f"spot-{suffix}"
+        try:
+            cards = yt.channel_top(handle, RANK_DEPTH)
+        except UpstreamError as e:
+            log.warning("collect: spotlight %s failed status=%s", suffix, e.status)
+            skipped.append(scope)
+            continue
+        if cards and store.put_snapshot(scope, now, cards):
             written += 1
 
     # 5) YouTube Music 공식 차트 5종 — 재생목록 순서 = 차트 순위, 차트별 실패 격리
